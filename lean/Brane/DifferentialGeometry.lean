@@ -46,7 +46,8 @@ Along the way we use `LinearIndependent.pair_iff`, `Submodule.span_induction`,
 
 ## Main definitions
 
-* `Brane.DiffGeom.Vec3` — the vector type `EuclideanSpace ℝ (Fin 3)`.
+* `Brane.DiffGeom.Vec3` — the vector type `EuclideanSpace ℝ (Fin 3)`;
+  `Mat32`, `Mat22`, `Vel2` — the matrix and velocity shapes.
 * `Brane.DiffGeom.graph` — the graph of a height function.
 * `Brane.DiffGeom.partialX`, `partialY` — first partials of `h`;
   `partialXX`, `partialXY`, `partialYX`, `partialYY` — second partials.
@@ -86,6 +87,16 @@ later proofs can compute coordinates directly. -/
 
 /-- A vector in `ℝ³`, as Mathlib's Euclidean space over `Fin 3`. -/
 abbrev Vec3 : Type := EuclideanSpace ℝ (Fin 3)
+
+/-- A `3×2` real matrix: the shape of the Jacobians of `ℝ² → ℝ³` maps. -/
+abbrev Mat32 : Type := Matrix (Fin 3) (Fin 2) ℝ
+
+/-- A `2×2` real matrix: the shape of the Hessian and the Gram matrix. -/
+abbrev Mat22 : Type := Matrix (Fin 2) (Fin 2) ℝ
+
+/-- A parameter-space velocity: an element of the domain `ℝ²` as a function
+`Fin 2 → ℝ`, the thing a Jacobian acts on by `Matrix.mulVec`. -/
+abbrev Vel2 : Type := Fin 2 → ℝ
 
 /-- The vector with coordinates `(a, b, c)`. -/
 def vec3 (a b c : ℝ) : Vec3 := !₂[a, b, c]
@@ -157,27 +168,27 @@ def tangentPlane (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) : Set Vec3 :=
 
 /-- The Jacobian of the graph map `(x, y) ↦ (x, y, h x y)`.
 Its two columns are the coordinate tangents. -/
-def jacobian (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) : Matrix (Fin 3) (Fin 2) ℝ :=
+def jacobian (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) : Mat32 :=
   !![1, 0; 0, 1; partialX h p.1 p.2, partialY h p.1 p.2]
 
 /-- The Jacobian of the `x`-tangent: its columns are the derivatives of
 `tangentX` in the `x`- and `y`-directions (`tangentXX`, `tangentXY`). -/
-def jacobianTangentX (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) : Matrix (Fin 3) (Fin 2) ℝ :=
+def jacobianTangentX (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) : Mat32 :=
   !![0, 0; 0, 0; partialXX h p.1 p.2, partialXY h p.1 p.2]
 
 /-- The Jacobian of the `y`-tangent: its columns are the derivatives of
 `tangentY` in the `x`- and `y`-directions (`tangentYX`, `tangentYY`). -/
-def jacobianTangentY (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) : Matrix (Fin 3) (Fin 2) ℝ :=
+def jacobianTangentY (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) : Mat32 :=
   !![0, 0; 0, 0; partialYX h p.1 p.2, partialYY h p.1 p.2]
 
 /-- The Hessian of `h`: the `2×2` matrix of second partials. -/
-def hessian (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
+def hessian (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) : Mat22 :=
   !![partialXX h p.1 p.2, partialXY h p.1 p.2;
      partialYX h p.1 p.2, partialYY h p.1 p.2]
 
 /-- The Gram matrix of the two tangents, with entries given by the Mathlib
 inner product. -/
-def gramMatrix (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
+def gramMatrix (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) : Mat22 :=
   !![⟪tangentX h p, tangentX h p⟫, ⟪tangentX h p, tangentY h p⟫;
      ⟪tangentY h p, tangentX h p⟫, ⟪tangentY h p, tangentY h p⟫]
 
@@ -503,7 +514,7 @@ theorem tangentPlane_inner_normal (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) {q 
 
 /-- The Jacobian sends an `xy`-velocity to the corresponding tangent vector;
 the result is lifted back into `EuclideanSpace` with `WithLp.toLp`. -/
-theorem jacobian_mulVec (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) (v : Fin 2 → ℝ) :
+theorem jacobian_mulVec (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) (v : Vel2) :
     toLp 2 (jacobian h p *ᵥ v) = v 0 • tangentX h p + v 1 • tangentY h p := by
   ext i
   fin_cases i <;> simp [jacobian, tangentX, tangentY, vec3, Matrix.mulVec, dotProduct,
@@ -526,7 +537,7 @@ theorem jacobian_mulVec_one (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) :
 
 /-- The tangent space is the range of the Jacobian. -/
 theorem mem_tangentSpace_iff_jacobian (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) (v : Vec3) :
-    v ∈ tangentSpace h p ↔ ∃ u : Fin 2 → ℝ, toLp 2 (jacobian h p *ᵥ u) = v := by
+    v ∈ tangentSpace h p ↔ ∃ u : Vel2, toLp 2 (jacobian h p *ᵥ u) = v := by
   rw [mem_tangentSpace_iff]
   constructor
   · rintro ⟨a, b, rfl⟩
@@ -538,7 +549,7 @@ theorem mem_tangentSpace_iff_jacobian (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ)
 
 /-- Multiplying the Jacobian of the `x`-tangent by an `xy`-velocity gives the
 corresponding combination of the second derivatives `tangentXX`, `tangentXY`. -/
-theorem jacobianTangentX_mulVec (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) (v : Fin 2 → ℝ) :
+theorem jacobianTangentX_mulVec (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) (v : Vel2) :
     toLp 2 (jacobianTangentX h p *ᵥ v) =
       v 0 • tangentXX h p + v 1 • tangentXY h p := by
   ext i
@@ -548,7 +559,7 @@ theorem jacobianTangentX_mulVec (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) (v : 
 
 /-- Multiplying the Jacobian of the `y`-tangent by an `xy`-velocity gives the
 corresponding combination of the second derivatives `tangentYX`, `tangentYY`. -/
-theorem jacobianTangentY_mulVec (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) (v : Fin 2 → ℝ) :
+theorem jacobianTangentY_mulVec (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) (v : Vel2) :
     toLp 2 (jacobianTangentY h p *ᵥ v) =
       v 0 • tangentYX h p + v 1 • tangentYY h p := by
   ext i
