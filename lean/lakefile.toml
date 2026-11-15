@@ -1,0 +1,26 @@
+name = "brane"
+version = "0.1.0"
+keywords = ["math"]
+defaultTargets = ["Brane"]
+
+[leanOptions]
+pp.unicode.fun = true # pretty-prints `fun a ↦ b`
+relaxedAutoImplicit = false
+weak.linter.mathlibStandardSet = true
+maxSynthPendingDepth = 3
+
+[[require]]
+name = "mathlib"
+scope = "leanprover-community"
+rev = "v4.35.0"
+
+# Verso loads highlighted code from this package. The extractor and the
+# `highlighted` facet come from subverso, pinned to the revision used by
+# Verso v4.35.0 so that the notes build and this package agree.
+[[require]]
+name = "subverso"
+git = "https://github.com/leanprover/subverso"
+rev = "892d6dc520270b5fb8c1291dd1b131e8c16255ed"
+
+[[lean_lib]]
+name = "Brane"
