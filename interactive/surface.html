@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<!--
+  Interactive surface viewer — a visualization of
+  lean/Brane/DifferentialGeometry.lean.
+
+  Every vector drawn here corresponds to a definition in namespace
+  Brane.DiffGeom (press L for the Lean reference panel):
+
+    tangentX h p   = vec3 1 0 (partialX h p.1 p.2)
+    tangentY h p   = vec3 0 1 (partialY h p.1 p.2)
+    normal_eq      : normal h p = vec3 (-∂h/∂x) (-∂h/∂y) 1
+    gradient_eq    : gradient h p = vec3 (∂h/∂x) (∂h/∂y) 0
+    tangentXX h p  = vec3 0 0 (partialXX h p.1 p.2)   (and XY / YX / YY)
+    norm_sq_normal : ‖normal h p‖² = 1 + (∂h/∂x)² + (∂h/∂y)²
+
+  Controls:
+    ↑ / ↓  walk forward / backward along the surface
+    ← / →  rotate the view in place
+    T tangents · N normal · G gradient · S 2nd derivatives ·
+    W wireframe · O orbit camera · L Lean panel · 1..n switch surface
+-->
+<html>
+<head>
+<meta charset="utf-8">
+<title>Brane.DiffGeom — interactive surface</title>
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #101018; }
+  #hud {
+    position: absolute; top: 10px; left: 10px; z-index: 10;
+    color: #d8d8e8; font: 13px/1.45 ui-monospace, Menlo, Consolas, monospace;
+    background: rgba(16,16,28,.75); padding: 10px 12px; border-radius: 8px;
+    white-space: pre; pointer-events: none;
+  }
+  #hud b { color: #ffffff; }
+  #lean {
+    position: absolute; top: 10px; right: 10px; z-index: 10; display: none;
+    color: #d8d8e8; font: 12.5px/1.5 ui-monospace, Menlo, Consolas, monospace;
+    background: rgba(16,16,28,.85); padding: 12px 14px; border-radius: 8px;
+    white-space: pre; max-width: 46ch; overflow: auto; max-height: 92vh;
+  }
+  #lean h3 { margin: 0 0 6px 0; font-size: 13px; color: #9fd0ff; }
+  #lean .f { color: #9fd0ff; }
+  .on  { color: #8fe08f; }
+  .off { color: #8888a0; }
+</style>
+</head>
+<body>
+<div id="hud"></div>
+<div id="lean"></div>
+<script type="importmap">
+{ "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }
+</script>
+<script type="module">
+import * as THREE from 'three';
+
+/* =====================================================================
+   Surfaces. Each entry is the JS counterpart of a Lean definition in
+   Brane.DiffGeom; the derivative values are exactly the ones proved by
+   the @[simp] lemmas partial*_name in DifferentialGeometry.lean.
+   Add a new surface by adding an entry — the UI picks it up.
+   ===================================================================== */
+const SURFACES = {
+  bowl: {
+    // Brane.DiffGeom.bowlHeight : x ^ 2 + y ^ 2
+    name: 'Paraboloid  z = x² + y²   (Brane.DiffGeom.bowlHeight)',
+    h:   (x, y) => x*x + y*y,   // bowlHeight
+    hx:  (x, y) => 2*x,         // partialX_bowlHeight : = 2 * x
+    hy:  (x, y) => 2*y,         // partialY_bowlHeight : = 2 * y
+    hxx: () => 2,               // partialXX_bowlHeight : = 2
+    hxy: () => 0,               // partialXY_bowlHeight : = 0
+    hyx: () => 0,               // partialYX_bowlHeight : = 0
+    hyy: () => 2,               // partialYY_bowlHeight : = 2
+    facts: [
+      'divergence bowlHeight p = 4      (Laplacian is constant)',
+      'curl bowlHeight p = 0            (partialXY = partialYX)',
+      'norm_sq_normal_bowlHeight : ‖normal‖² = 1 + 4x² + 4y²',
+    ],
+  },
+};
+
+const EXTENT = 5;        // surface drawn over [-EXTENT, EXTENT]²
+const EYE = 1.2;         // camera height above the surface point
+const STEP = 0.12;       // walk step
+const TURN = 0.05;       // radians per frame while a turn key is held
+
+// ---------------------------------------------------------------- scene
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x101018);
+scene.fog = new THREE.Fog(0x101018, 25, 60);
+
+const camera = new THREE.PerspectiveCamera(60, innerWidth/innerHeight, 0.1, 200);
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(devicePixelRatio);
+document.body.appendChild(renderer.domElement);
+addEventListener('resize', () => {
+  camera.aspect = innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+
+scene.add(new THREE.AmbientLight(0xffffff, 0.55));
+const sun = new THREE.DirectionalLight(0xffffff, 1.1);
+sun.position.set(6, 10, 4);
+scene.add(sun);
+
+// grid floor for depth cues (below the surface)
+const grid = new THREE.GridHelper(2*EXTENT, 20, 0x30304a, 0x22223a);
+grid.position.y = -EXTENT*EXTENT - 1;
+scene.add(grid);
+
+// --------------------------------------------------- surface mesh + wire
+let surface = null, wire = null;
+function buildSurface(s) {
+  if (surface) { scene.remove(surface, wire); surface.geometry.dispose(); wire.geometry.dispose(); }
+  const N = 100;
+  const geo = new THREE.PlaneGeometry(2*EXTENT, 2*EXTENT, N, N);
+  // plane vertices are (px, py, 0) in its local xy; we lift them to
+  // three.js coordinates (px, h(px, py), py) — three's Y axis is "up" (height).
+  const pos = geo.attributes.position;
+  for (let i = 0; i < pos.count; i++) {
+    const px = pos.getX(i), py = pos.getY(i);
+    pos.setXYZ(i, px, s.h(px, py), py);
+  }
+  geo.computeVertexNormals();
+  surface = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({
+    color: 0x3f6fb5, metalness: 0.05, roughness: 0.65, side: THREE.DoubleSide,
+  }));
+  scene.add(surface);
+  wire = new THREE.Mesh(geo.clone(), new THREE.MeshBasicMaterial({
+    color: 0x8fb0ff, wireframe: true, transparent: true, opacity: 0.25,
+  }));
+  wire.visible = false;
+  scene.add(wire);
+}
+
+// ------------------------------------------------------ player state
+const player = { x: 0.8, y: 0.6, theta: Math.PI*0.75 };
+let surfName = 'bowl';
+let S = SURFACES[surfName];
+
+// ------------------------------------------------------ overlay arrows
+// Each overlay is built from the same formulas as the Lean defs. We use
+// three.js coordinates (x, height, y) — Y is up — so a Lean vector
+// vec3 a b c (coordinates (a, b, c), c = vertical) is drawn as
+// THREE.Vector3(a, c, b). The HUD always prints Lean order.
+function tangentX(s, x, y) { return new THREE.Vector3(1, s.hx(x, y), 0); }
+function tangentY(s, x, y) { return new THREE.Vector3(0, s.hy(x, y), 1); }
+function normalVec(s, x, y) { return new THREE.Vector3(-s.hx(x,y), 1, -s.hy(x,y)); }
+function gradientVec(s, x, y) { return new THREE.Vector3(s.hx(x,y), 0, s.hy(x,y)); }
+function tangentXX(s, x, y) { return new THREE.Vector3(0, s.hxx(x, y), 0); }
+function tangentXY(s, x, y) { return new THREE.Vector3(0, s.hxy(x, y), 0); }
+function tangentYX(s, x, y) { return new THREE.Vector3(0, s.hyx(x, y), 0); }
+function tangentYY(s, x, y) { return new THREE.Vector3(0, s.hyy(x, y), 0); }
+
+const ORIGIN = () => new THREE.Vector3(0,0,0);
+const arrows = {}; // name -> {group, update}
+function addArrow(name, color, dirFn, scale) {
+  const group = new THREE.Group();
+  const arr = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), ORIGIN(), 1, color, 0.18, 0.09);
+  group.add(arr);
+  scene.add(group);
+  arrows[name] = { group, arr, dirFn, scale };
+}
+function refreshArrows() {
+  const { x, y } = player;
+  const p = new THREE.Vector3(x, S.h(x, y), y);
+  for (const [name, a] of Object.entries(arrows)) {
+    a.group.visible = state[name];
+    if (!state[name]) continue;
+    const d = a.dirFn(S, x, y);
+    const len = d.length();
+    if (len < 1e-9) { a.group.visible = false; continue; }
+    a.arr.setDirection(d.clone().normalize());
+    a.arr.setLength(len * a.scale, 0.16*a.scale, 0.08*a.scale);
+    a.group.position.copy(p);
+  }
+}
+addArrow('tangentX', 0xff5555, (s,x,y) => tangentX(s,x,y), 1.2);
+addArrow('tangentY', 0x55ff77, (s,x,y) => tangentY(s,x,y), 1.2);
+addArrow('normal',   0x5599ff, (s,x,y) => normalVec(s,x,y), 0.9);
+addArrow('gradient', 0xffaa33, (s,x,y) => gradientVec(s,x,y), 1.0);
+addArrow('tangentXX', 0xffe066, (s,x,y) => tangentXX(s,x,y), 0.5);
+addArrow('tangentXY', 0xcc77ff, (s,x,y) => tangentXY(s,x,y), 0.5);
+addArrow('tangentYX', 0x66ffee, (s,x,y) => tangentYX(s,x,y), 0.5);
+addArrow('tangentYY', 0xff88cc, (s,x,y) => tangentYY(s,x,y), 0.5);
+
+// player marker
+const marker = new THREE.Mesh(
+  new THREE.SphereGeometry(0.06, 16, 16),
+  new THREE.MeshBasicMaterial({ color: 0xffffff }));
+scene.add(marker);
+
+// ------------------------------------------------------ state & input
+const state = {
+  tangentX: true, tangentY: true, normal: true,
+  gradient: false, tangentXX: false, tangentXY: false,
+  tangentYX: false, tangentYY: false,
+  wire: false, orbit: false, lean: true,
+};
+const TOGGLES = { t: ['tangentX','tangentY'], n: ['normal'], g: ['gradient'],
+                  s: ['tangentXX','tangentXY','tangentYX','tangentYY'],
+                  w: ['wire'], o: ['orbit'], l: ['lean'] };
+const held = new Set();
+addEventListener('keydown', (e) => {
+  const k = e.key.toLowerCase();
+  if (k === 'arrowup' || k === 'arrowdown' || k === 'arrowleft' || k === 'arrowright') {
+    e.preventDefault(); held.add(k); return;
+  }
+  if (TOGGLES[k]) {
+    for (const name of TOGGLES[k]) state[name] = !state[name];
+    if (k === 'w') wire.visible = state.wire;
+    document.getElementById('lean').style.display = state.lean ? 'block' : 'none';
+  }
+  const n = parseInt(k, 10);
+  if (n >= 1 && n <= Object.keys(SURFACES).length) {
+    surfName = Object.keys(SURFACES)[n-1];
+    S = SURFACES[surfName];
+    buildSurface(S);
+  }
+});
+addEventListener('keyup', (e) => held.delete(e.key.toLowerCase()));
+
+// first-person / orbit cameras
+let orbitAngle = 0;
+function updateCamera() {
+  const { x, y, theta } = player;
+  const z = S.h(x, y);
+  marker.position.set(x, z, y);
+  if (state.orbit) {
+    orbitAngle += 0.002;
+    const r = 14;
+    camera.position.set(x + r*Math.cos(orbitAngle), z + 10, y + r*Math.sin(orbitAngle));
+    camera.up.set(0, 1, 0);
+    camera.lookAt(x, z, y);
+  } else {
+    const dir = new THREE.Vector3(Math.cos(theta), 0, Math.sin(theta));
+    camera.position.set(x, z + EYE, y);
+    camera.up.set(0, 1, 0);
+    camera.lookAt(camera.position.clone().add(dir));
+  }
+}
+
+function step() {
+  if (held.has('arrowleft'))  player.theta += TURN;
+  if (held.has('arrowright')) player.theta -= TURN;
+  if (held.has('arrowup') || held.has('arrowdown')) {
+    const sgn = held.has('arrowup') ? 1 : -1;
+    player.x += sgn * STEP * Math.cos(player.theta);
+    player.y += sgn * STEP * Math.sin(player.theta);
+    const L = EXTENT - 0.2;
+    player.x = Math.max(-L, Math.min(L, player.x));
+    player.y = Math.max(-L, Math.min(L, player.y));
+  }
+}
+
+// ------------------------------------------------------ HUD
+const hud = document.getElementById('hud');
+const fmt = (v) => (Math.abs(v) < 1e-12 ? 0 : v).toFixed(2).padStart(6);
+const V = (v) => `(${fmt(v.x)}, ${fmt(v.z)}, ${fmt(v.y)})`; // print in Lean order (x, y, height)
+
+function renderHud() {
+  const { x, y, theta } = player;
+  const z = S.h(x, y);
+  const p = new THREE.Vector3(x, z, y);
+  const n = normalVec(S, x, y);
+  const normSq = n.lengthSq(); // norm_sq_normal
+  const on = (b, t) => b ? `<span class="on">${t} on</span>` : `<span class="off">${t} off</span>`;
+  hud.innerHTML =
+`<b>Brane.DiffGeom — ${S.name}</b>
+${Object.keys(SURFACES).map((k, i) => k === surfName ? `<b>${i+1} ● ${k}</b>` : `${i+1}   ${k}`).join('\n')}
+
+position p = (x, y, h x y) = (${fmt(x)}, ${fmt(y)}, ${fmt(z)})   θ = ${(theta % (2*Math.PI)).toFixed(2)}
+↑ walk · ↓ back · ←/→ turn
+
+<b>tangentX h p</b>  = ${V(tangentX(S, x, y))}      ${on(state.tangentX, 'T')}
+<b>tangentY h p</b>  = ${V(tangentY(S, x, y))}
+<b>normal h p</b>    = ${V(n)}      ${on(state.normal, 'N')}
+<b>gradient h p</b>  = ${V(gradientVec(S, x, y))}   ${on(state.gradient, 'G')}
+<b>2nd derivs</b>    = ${V(tangentXX(S, x, y))} ${V(tangentYY(S, x, y))}  ${on(state.tangentXX || state.tangentYY || state.tangentXY || state.tangentYX, 'S')}
+partialX = ${fmt(S.hx(x,y))}  partialY = ${fmt(S.hy(x,y))}
+partialXX = ${fmt(S.hxx(x,y))}  partialYY = ${fmt(S.hyy(x,y))}
+
+‖normal‖² = 1 + (∂h/∂x)² + (∂h/∂y)² = ${normSq.toFixed(3)}
+wire ${on(state.wire,'W')} · orbit ${on(state.orbit,'O')} · lean panel ${on(state.lean,'L')}`;
+}
+
+const leanPanel = document.getElementById('lean');
+function renderLean() {
+  leanPanel.innerHTML =
+`<h3>lean/Brane/DifferentialGeometry.lean</h3><span class="f">namespace Brane.DiffGeom</span>
+
+<span class="f">-- the arrows on screen</span>
+tangentX h p = vec3 1 0 (partialX h p.1 p.2)
+tangentY h p = vec3 0 1 (partialY h p.1 p.2)
+normal_eq : normal h p
+  = vec3 (-∂h/∂x) (-∂h/∂y) 1
+gradient_eq : gradient h p
+  = vec3 (∂h/∂x) (∂h/∂y) 0
+tangentXX h p = vec3 0 0 (partialXX h p.1 p.2)  (+ XY / YX / YY)
+
+<span class="f">-- facts you can see</span>
+inner_cross_left/right :
+  ⟪tangentX, normal⟫ = 0, ⟪tangentY, normal⟫ = 0
+norm_sq_normal : ‖normal‖²
+  = 1 + (∂h/∂x)² + (∂h/∂y)²
+det_gramMatrix : det (Jᵀ * J) = ‖normal‖²
+
+<span class="f">-- this surface (${surfName})</span>
+${S.facts.join('\n')}`;
+}
+
+// ------------------------------------------------------ main loop
+buildSurface(S);
+renderLean();
+document.getElementById('lean').style.display = 'block';
+function animate() {
+  step();
+  updateCamera();
+  refreshArrows();
+  renderHud();
+  renderer.render(scene, camera);
+  requestAnimationFrame(animate);
+}
+animate();
+</script>
+</body>
+</html>
