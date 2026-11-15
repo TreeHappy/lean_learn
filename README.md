@@ -47,6 +47,7 @@ cd notes && lake exe verso-serve _out/html-multi
 │   ├── Notes.lean            manual root: metadata and chapter list
 │   ├── Notes/*.lean          one module per chapter
 │   ├── Main.lean             the `notes` executable
+│   ├── interactive/          browser demos (plain HTML/JS)
 │   └── lakefile.toml
 ├── Makefile
 └── README.md
@@ -103,6 +104,23 @@ def double (n : Nat) : Nat := n + n
 ````
 
 The block content must match the source; Verso reports a diff if it does not, which is what keeps the notes honest.
+
+## Interactive viewer
+
+`notes/interactive/surface.html` is a 3D first-person visualization of
+`lean/Brane/DifferentialGeometry.lean` — open it directly in a browser (it
+loads Three.js from a CDN; no build step).
+
+Each arrow on the surface is the JS transliteration of a definition in
+`Brane.DiffGeom`: the tangents (`tangentX`, `tangentY`), the cross-product
+normal (`normal_eq`), the horizontal gradient (`gradient_eq`), and the
+second-derivative vectors (`tangentXX/XY/YX/YY`). Press `L` for a panel
+quoting the Lean lemmas the on-screen objects correspond to.
+
+Controls: `↑`/`↓` walk forward/backward along the surface, `←`/`→` turn in
+place, `T`/`N`/`G`/`S` toggle tangents/normal/gradient/second derivatives,
+`W` wireframe, `O` orbit camera, `1..n` switch surface. New surfaces are one
+entry in the `SURFACES` registry at the top of the file.
 
 ## Editor
 
