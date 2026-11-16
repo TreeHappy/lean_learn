@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 250" font-family="sans-serif" font-size="13">
+  <path d="M 60 190 Q 360 60 660 60" fill="none" stroke="#bbb" stroke-width="6" opacity="0.5"/>
+  <g stroke-linecap="round">
+    <g stroke="#1a6bb5" stroke-width="3"><line x1="80" y1="182" x2="140" y2="160"/><polygon points="135,151 152,155 143,166" fill="#1a6bb5"/></g>
+    <text x="100" y="148" fill="#1a6bb5">k₁ = field h s        (start)</text>
+    <g stroke="#3aa04a" stroke-width="3"><line x1="170" y1="171" x2="238" y2="150"/><polygon points="232,141 249,146 240,157" fill="#3aa04a"/></g>
+    <text x="200" y="196" fill="#3aa04a">k₂ = field h (s + dt/2 • k₁)</text>
+    <g stroke="#c47f00" stroke-width="3"><line x1="260" y1="160" x2="330" y2="138"/><polygon points="324,129 341,134 332,145" fill="#c47f00"/></g>
+    <text x="280" y="125" fill="#c47f00">k₃ = field h (s + dt/2 • k₂)</text>
+    <g stroke="#7a1ab5" stroke-width="3"><line x1="350" y1="146" x2="426" y2="123"/><polygon points="420,114 437,119 428,130" fill="#7a1ab5"/></g>
+    <text x="400" y="103" fill="#7a1ab5">k₄ = field h (s + dt • k₃)  (end)</text>
+  </g>
+  <path d="M 80 182 Q 240 120 440 120" fill="none" stroke="#d33" stroke-width="3"/>
+  <circle cx="80" cy="182" r="5" fill="#d33"/><circle cx="440" cy="120" r="5" fill="#d33"/>
+  <text x="360" y="235" text-anchor="middle" fill="#345">rk4Step: sₙ₊₁ = s + dt/6 • (k₁ + 2k₂ + 2k₃ + k₄) — the step lands on the true path (grey)</text>
+</svg>

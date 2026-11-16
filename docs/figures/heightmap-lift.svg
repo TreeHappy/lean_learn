@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 260" font-family="sans-serif" font-size="14">
+  <!-- UV plane -->
+  <g transform="translate(40,60)">
+    <rect x="0" y="0" width="160" height="120" fill="#dfe9f3" stroke="#5b7fa6" stroke-width="2"/>
+    <g stroke="#9db8d2" stroke-width="1">
+      <line x1="40" y1="0" x2="40" y2="120"/><line x1="80" y1="0" x2="80" y2="120"/><line x1="120" y1="0" x2="120" y2="120"/>
+      <line x1="0" y1="40" x2="160" y2="40"/><line x1="0" y1="80" x2="160" y2="80"/>
+    </g>
+    <circle cx="80" cy="60" r="5" fill="#d33"/>
+    <text x="80" y="145" text-anchor="middle" fill="#345">UV / parameter plane (x, y)</text>
+    <text x="80" y="163" text-anchor="middle" fill="#888" font-size="12">the bullet's position lives here</text>
+  </g>
+  <!-- arrow -->
+  <g stroke="#555" stroke-width="2" fill="#555">
+    <line x1="240" y1="120" x2="300" y2="120"/>
+    <polygon points="300,114 312,120 300,126"/>
+  </g>
+  <text x="276" y="108" text-anchor="middle" fill="#555">lift</text>
+  <!-- heightmap surface -->
+  <g transform="translate(330,30)">
+    <polygon points="40,140 240,140 320,60 120,60" fill="#cfe3c8" stroke="#4a7a4a" stroke-width="2"/>
+    <g stroke="#7fae7a" stroke-width="1" fill="none">
+      <polygon points="85,140 265,140 320,88 140,88" opacity="0.7"/>
+      <polygon points="130,140 290,140 320,116 160,116" opacity="0.5"/>
+    </g>
+    <circle cx="180" cy="102" r="5" fill="#d33"/>
+    <text x="180" y="180" text-anchor="middle" fill="#345">the mesh graph h: (x, y) → (x, y, h(x,y))</text>
+    <text x="180" y="198" text-anchor="middle" fill="#888" font-size="12">same red point, now displaced along +z</text>
+  </g>
+</svg>
