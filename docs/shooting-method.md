@@ -49,6 +49,56 @@ the ones a shooter cares about:
 evaluate `h` to get the 3D point. Exactly like simulating a vehicle on a
 heightfield: cheap 2D state, 3D render.
 
+### Notation, stated once and strictly
+
+The Lean code uses a handful of notations that are never explained at their
+use sites, so here they are, defined before they appear. In Lean a
+2-dimensional real vector is not a pair of floats but a *function* from the
+two-element index type `Fin 2` to `ℝ`:
+
+```lean
+abbrev Vel2 : Type := Fin 2 → ℝ   -- DiffGeom.Vel2
+```
+
+An element `v : Vel2` is therefore written `v`, its first component is the
+function value `v 0`, its second is `v 1`. In ordinary mathematical
+notation, `v` is the vector `(v₀, v₁)` with
+
+```text
+v₀ := v 0,   v₁ := v 1
+```
+
+and we will use `v₀, v₁` in prose and `v 0, v 1` when quoting Lean. The
+other notations:
+
+| Notation | Lean name | Meaning |
+|---|---|---|
+| `r • x` | `SMul.smul` | scalar multiplication `r·x` of a real number `r` with a vector/matrix `x` |
+| `M *ᵥ v` | `Matrix.mulVec` | matrix–vector product `M·v` (`M` acts on the column vector `v`) |
+| `u ⬝ᵥ v` | `Matrix.dotProduct` | the dot product `Σᵢ uᵢ vᵢ` of two vectors |
+| `![a, b]` | `Matrix.vecCons` literal | the vector `(a, b)` as a function `Fin 2 → ℝ`; more generally `![a, b, c]` a 3-vector |
+| `!![a, b; c, d]` | `Matrix.of` literal | the 2×2 matrix with rows `(a, b)` and `(c, d)` |
+| `p.1`, `p.2` | `Prod.fst`, `Prod.snd` | the coordinates of `p : ℝ × ℝ`, i.e. `x` and `y` |
+| `⟪u, v⟫` | `inner` | the Euclidean inner product (same value as `u ⬝ᵥ v`) |
+
+So for example the combination that `jacobian_mulVec` proves the Jacobian
+produces,
+
+```lean
+v 0 • tangentX h p + v 1 • tangentY h p
+```
+
+reads in strict mathematical notation as
+
+```text
+v₀ · ∂ₓσ(p) + v₁ · ∂ᵧσ(p),
+```
+
+where `v₀ = v 0` and `v₁ = v 1` are the two components of the UV velocity
+`v`, `•` is scalar multiplication, and the sum is the corresponding tangent
+vector — the familiar "local-to-world transform of a 2D velocity through the
+mesh Jacobian".
+
 ---
 
 ## 2. The weird physics rule
@@ -78,8 +128,10 @@ Let `γ(t) = (x(t), y(t))` be the UV path, `v = γ̇` its UV velocity, and
 where (all from `DifferentialGeometry.lean`):
 
 - `J = jacobian h p` is the 3×2 Jacobian whose columns are the mesh
-  tangents — `DiffGeom.jacobian_mulVec` proves it maps UV velocities to
-  tangent combinations `v 0 • tangentX + v 1 • tangentY`;
+  tangents — `DiffGeom.jacobian_mulVec` proves that acting on the UV
+  velocity it produces the tangent combination
+  `v₀ · tangentX h p + v₁ · tangentY h p` (with `v₀ = v 0`, `v₁ = v 1`
+  and `•` scalar multiplication, see the notation table in §1);
 - `H = hessian h p = [[∂ₓₓh, ∂ₓᵧh], [∂ᵧₓh, ∂ᵧᵧh]]` is the second-derivative
   texture — the `jacobianTangentX` / `jacobianTangentY` matrices are exactly
   its rows padded into 3×2 form (`jacobianTangentX_apply`,
@@ -112,12 +164,13 @@ if you can multiply a matrix by a vector, you can integrate this.
 The two building blocks, verbatim from `Shooting.lean`:
 
 ```lean
-/-- The parameter gradient of `h`: `(∂₀h, ∂₁h) = (partialX, partialY)`. -/
+/-- The parameter gradient of `h`: the vector `(∂₀h, ∂₁h) = (partialX, partialY)`,
+written with the `![·, ·]` vector literal. -/
 def gradientVec (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) : Vel2 :=
   ![partialX h p.1 p.2, partialY h p.1 p.2]
 
-/-- The Hessian quadratic form `γ̇ᵀ H γ̇`: the second derivative of `h` along
-the parameter velocity `v`. -/
+/-- The Hessian quadratic form `vᵀ H v`: the second derivative of `h` along
+the parameter velocity `v`, as a dot product `v ⬝ᵥ (H · v)`. -/
 def hessQuad (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) (v : Vel2) : ℝ :=
   v ⬝ᵥ (hessian h p *ᵥ v)
 ```
@@ -192,7 +245,7 @@ bundle — all in UV space:
 /-- The state of a shot: parameter position and parameter velocity. -/
 structure ShotState where
   pos : ℝ × ℝ
-  vel : Vel2   -- a function Fin 2 → ℝ, i.e. a float2
+  vel : Vel2   -- = Fin 2 → ℝ; components are `vel 0` and `vel 1`, i.e. (v₀, v₁)
 ```
 
 It has coordinatewise `Add`, `SMul ℝ` and `Zero` instances
