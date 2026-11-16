@@ -1,4 +1,4 @@
-name: Deploy web to GitHub Pages
+name: Deploy web + Verso docs to GitHub Pages
 
 on:
   push:
@@ -22,9 +22,28 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/configure-pages@v5
+
+      # Lean toolchain for building the Verso notes
+      - name: Install elan
+        run: |
+          curl https://elan.lean-lang.org/elan-init.sh -sSf | sh -s -- -y
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+
+      - name: Build Verso notes
+        run: cd notes && lake exe notes
+
+      # Assemble one site: game at /, Verso output at /notes/
+      - name: Assemble site
+        run: |
+          mkdir -p site/notes
+          cp -r web/. site/
+          cp -r notes/_out/html-multi/. site/notes/
+
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: web
+          path: site
+
       - id: deployment
         uses: actions/deploy-pages@v4
