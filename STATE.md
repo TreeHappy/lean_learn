@@ -51,41 +51,39 @@ Last updated: 2026-11-15.
   matches `Brane.DiffGeom.bowlHeight`). Coordinates: three.js (x, height,
   y); HUD prints vectors in Lean order.
 
-## Geometric algebra layer — IN PROGRESS
+## Geometric algebra layer
 
-- Goal: `lean/Brane/GeometricAlgebra.lean`, namespace `Brane.GA`, built on
+- `lean/Brane/GeometricAlgebra.lean`, namespace `Brane.GA`, built on
   Mathlib's `CliffordAlgebra` (GA = Clifford algebra over the Euclidean
-  quadratic form on `Vec3`). Reference: Mathlib `CliffordAlgebra.*`;
-  third-party [`pygae/lean-ga`](https://github.com/pygae/lean-ga) as design
-  reference (not directly usable, Lean 3-era).
-- Plan / milestones:
+  quadratic form on `Vec3`); imports `Brane.DifferentialGeometry` and
+  reuses its `Vec3`, `vec3`, `vec3_inner`, `cross`. **Done and committed:**
   1. `quadVec : QuadraticForm ℝ Vec3` via `QuadraticMap.ofPolar`
-     (`Q v = ⟪v, v⟫`). **Do this on `Vec3` (EuclideanSpace), NOT on
-     `Fin 3 → ℝ` — the plain function type has no `Inner` instance.**
-  2. `abbrev GA := CliffordAlgebra quadVec`; `embed : Vec3 →ₗ[ℝ] GA` :=
-     `CliffordAlgebra.ι`; `embed_sq : embed v * embed v = ⟪v,v⟫ • 1` from
-     `ι_sq_scalar`.
-  3. Fundamental identity `embed u * embed v + embed v * embed u =
-     (2 * ⟪u, v⟫) • 1`. Proof idea: linearity in `v` + diagonal case
-     (`embed_sq`) + basis expansion of `v` in `e₀,e₁,e₂`.
-  4. Orthonormal basis `ebasis : Fin 3 → Vec3` with `embed (ebasis i)² =
-     1` and anti-commutation `eᵢ eⱼ = -eⱼ eᵢ` (`i ≠ j`).
-  5. Pseudoscalar `I := e₀ e₁ e₂`, `I * I = -1`.
-  6. Hodge-dual theorem connecting to the DiffGeom layer:
-     `embed u * embed v = ⟪u, v⟫ • 1 + embed (cross u v) * I`
-     (the blade of two vectors = inner product + dualized cross).
-     Needs basis cross products: `cross e₀ e₁ = e₂`, `cross e₀ e₂ =
-     -e₁`, `cross e₁ e₂ = e₀`, zero on the diagonal (easy `ext` +
-     `fin_cases` from `DiffGeom.cross_coordinates`).
-  7. Later: grade projections, blades as subspace carriers
-     (`tangentX ∧ tangentY` = tangent plane, `‖blade‖² = det gramMatrix`),
-     rotors/versors for camera math.
-- Current scratch: `lean/Scratch.lean` (NOT committed) — step 1 attempted
-  on the wrong module (`Fin 3 → ℝ`); redo on `Vec3`.
-- Useful Mathlib API found: `CliffordAlgebra.ι`, `ι_sq_scalar`,
-  `CliffordAlgebra.evenOdd` (ℤ₂-grading), `CliffordAlgebra.even`,
-  `EvenHom`/`even.lift` (universal property of the even subalgebra),
-  `QuadraticMap.ofPolar`.
+     (`Q v = ⟪v, v⟫`); `quadVec_apply`.
+  2. `abbrev GA3 := CliffordAlgebra quadVec`; `embed : Vec3 → GA3` (=
+     `CliffordAlgebra.ι`); `embed_add/smul/zero/neg`; `embed_sq : v² =
+     ⟪v,v⟫` (via `ι_sq_scalar`).
+  3. Fundamental identity `embed_mul_add : uv + vu = 2⟪u,v⟫` — proved by
+     showing the defect is additive + homogeneous in `v` and vanishes on
+     the orthonormal basis `e0, e1, e2` (each from `(u+e)² = ⟪u+e,u+e⟫`).
+  4. Basis `e0/e1/e2` + `vec3_eq_smul`; pair inner products; anticommutation
+     `embed_anti` (`vw = -uv` for orthogonal vectors).
+  5. Pseudoscalar `I = e₀e₁e₂`; `I_sq : I * I = -1`; Hodge duals on the
+     basis: `e0_mul_I = e1e2`, `e1_mul_I = -(e0e2)`, `e2_mul_I = e0e1`.
+  6. **`embed_mul_dual` (main theorem): `uv = ⟪u,v⟫ + (u × v) · I`** —
+     defect bilinear in `(u, v)`, vanishes on the nine basis pairs;
+     needed `cross_add/smul` (both sides), `cross_self`, and cyclic basis
+     crosses `cross_e0_e1 = e2`, `cross_e1_e2 = e0`, `cross_e2_e0 = e1`.
+  7. Proof-engineering notes (for future work in this layer): GA3 is
+     noncommutative — use `abel` / `noncomm_ring`, never `ring`;
+     `linear_combination` needs a commutative ring, so rearrangement is
+     done with explicit `rw` chains (always pass explicit args to
+     `mul_assoc` — unqualified `rw` picks the outermost match);
+     `add_eq_zero_iff_eq_neg.mp` converts `a + b = 0` to `b = -a`;
+     `map_neg` etc. don't match plain-function `embed` (only `ι`-coe
+     shapes) — use the local `embed_neg`.
+- Remaining milestones (from the original plan): grade projections,
+  blades as subspace carriers (`tangentX ∧ tangentY` = tangent plane,
+  `‖blade‖² = det gramMatrix`), rotors/versors for camera math.
 
 ## Conventions
 
