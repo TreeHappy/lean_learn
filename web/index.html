@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>brane — geodesic sandbox</title>
+<style>
+  :root {
+    --crust:   #11111b;
+    --mantle:  #181825;
+    --base:    #1e1e2e;
+    --text:    #cdd6f4;
+    --subtext: #a6adc8;
+    --overlay: #6c7086;
+    --mauve:   #cba6f7;
+    --green:   #a6e3a1;
+    --peach:   #fab387;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; overflow: hidden; background: var(--crust); }
+  canvas { display: block; }
+  #ui {
+    position: fixed; inset: 0; pointer-events: none;
+    font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    color: var(--subtext);
+  }
+  #title {
+    position: absolute; top: 18px; left: 22px;
+    font-size: 15px; letter-spacing: 0.18em; color: var(--mauve);
+  }
+  #title small { display: block; margin-top: 6px; font-size: 10px; letter-spacing: 0.1em; color: var(--overlay); }
+  #hint {
+    position: absolute; bottom: 18px; left: 22px;
+    font-size: 11px; line-height: 1.9; letter-spacing: 0.06em;
+  }
+  #hint b { color: var(--text); font-weight: 500; }
+  #speed {
+    position: absolute; top: 18px; right: 22px; text-align: right;
+    font-size: 11px; letter-spacing: 0.1em; color: var(--overlay);
+  }
+  #speed .v { color: var(--peach); font-size: 15px; }
+  #reload {
+    position: absolute; bottom: 16px; right: 20px; pointer-events: auto;
+    font: inherit; font-size: 11px; letter-spacing: 0.1em;
+    color: var(--subtext); background: var(--mantle);
+    border: 1px solid #313244; border-radius: 6px; padding: 7px 12px; cursor: pointer;
+  }
+  #reload:hover { color: var(--mauve); border-color: var(--mauve); }
+</style>
+</head>
+<body>
+<div id="ui">
+  <div id="title">BRANE<small>geodesic shooting sandbox</small></div>
+  <div id="speed">power<br><span class="v" id="speedVal">—</span></div>
+  <div id="hint">
+    <b>drag from the green point</b> — aim &amp; power, release to fire<br>
+    <b>click terrain</b> — move shooter &nbsp;·&nbsp; <b>drag empty space</b> — orbit &nbsp;·&nbsp; <b>wheel</b> — zoom
+  </div>
+  <button id="reload">new terrain [R]</button>
+</div>
+
+<script type="importmap">
+{ "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+
+/* ============================================================
+   Catppuccin Mocha palette
+   ============================================================ */
+const C = {
+  crust:  0x11111b, mantle: 0x181825, base:   0x1e1e2e,
+  surface0: 0x313244, overlay: 0x6c7086,
+  text:   0xcdd6f4, subtext: 0xa6adc8,
+  red:    0xf38ba8, peach:  0xfab387, yellow: 0xf9e2af,
+  green:  0xa6e3a1, teal:   0x94e2d5, sky:    0x89dceb,
+  blue:   0x89b4fa, lavender: 0xb4befe, mauve:  0xcba6f7, pink: 0xf5c2e7,
+};
+const col = (h, l = 1) => new THREE.Color(h).multiplyScalar(l);
+// height ramp: low → high
+const RAMP = [C.blue, C.lavender, C.mauve, C.pink, C.red, C.peach].map(h => new THREE.Color(h));
+
+/* ============================================================
+   Terrain: sum of gaussians with analytic gradient + hessian
+   ============================================================ */
+const EXT = 3.2;              // domain half-size
+let bumps = [];
+
+function newTerrain() {
+  bumps = [];
+  const n = 9;
+  for (let i = 0; i < n; i++) {
+    bumps.push({
+      a: (i % 3 === 0 ? -1 : 1) * (0.5 + Math.random() * 1.1),   // some craters
+      cx: (Math.random() * 2 - 1) * (EXT - 0.7),
+      cy: (Math.random() * 2 - 1) * (EXT - 0.7),
+      r2: 0.35 + Math.random() * 1.4,                            // sigma^2
+    });
+  }
+}
+newTerrain();
+
+function heightAt(x, y) {
+  let h = 0;
+  for (const b of bumps) {
+    const dx = x - b.cx, dy = y - b.cy;
+    h += b.a * Math.exp(-(dx * dx + dy * dy) / b.r2);
+  }
+  return h;
+}
+// gradient + hessian in one pass: returns [hx, hy, hxx, hxy, hyy]
+function derivativesAt(x, y) {
+  let hx = 0, hy = 0, hxx = 0, hxy = 0, hyy = 0;
+  for (const b of bumps) {
+    const dx = x - b.cx, dy = y - b.cy, r2 = b.r2;
+    const e = b.a * Math.exp(-(dx * dx + dy * dy) / r2);
+    hx  += e * (-2 * dx / r2);
+    hy  += e * (-2 * dy / r2);
+    hxx += e * (4 * dx * dx / (r2 * r2) - 2 / r2);
+    hxy += e * (4 * dx * dy / (r2 * r2));
+    hyy += e * (4 * dy * dy / (r2 * r2) - 2 / r2);
+  }
+  return [hx, hy, hxx, hxy, hyy];
+}
+
+/* ============================================================
+   Geodesic physics — direct port of Brane.Shoot (Shooting.lean)
+   geoAccel = -G⁻¹ ((vᵀ H v) ∇h), G = [[1+hx², hx hy],[hx hy, 1+hy²]]
+   ============================================================ */
+function geoAccel(px, py, vx, vy) {
+  const [hx, hy, hxx, hxy, hyy] = derivativesAt(px, py);
+  const hessQuad = vx * vx * hxx + 2 * vx * vy * hxy + vy * vy * hyy;   // vᵀHv
+  const gx = hessQuad * hx, gy = hessQuad * hy;                          // (vᵀHv)∇h
+  const det = 1 + hx * hx + hy * hy;                                     // det G ≥ 1
+  // G⁻¹ = 1/det [[1+hy², -hx hy],[-hx hy, 1+hx²]]
+  const ax = -((1 + hy * hy) * gx - hx * hy * gy) / det;
+  const ay = -(-(hx * hy) * gx + (1 + hx * hx) * gy) / det;
+  return [ax, ay];
+}
+
+// RK4 step on state (px,py,vx,vy) — Brane.Shoot.rk4Step
+function rk4Step(s, dt) {
+  const f = (st) => {
+    const [ax, ay] = geoAccel(st[0], st[1], st[2], st[3]);
+    return [st[2], st[3], ax, ay];
+  };
+  const add = (a, b, k) => [a[0] + b[0] * k, a[1] + b[1] * k, a[2] + b[2] * k, a[3] + b[3] * k];
+  const k1 = f(s);
+  const k2 = f(add(s, k1, dt / 2));
+  const k3 = f(add(s, k2, dt / 2));
+  const k4 = f(add(s, k3, dt));
+  return [
+    s[0] + dt / 6 * (k1[0] + 2 * k2[0] + 2 * k3[0] + k4[0]),
+    s[1] + dt / 6 * (k1[1] + 2 * k2[1] + 2 * k3[1] + k4[1]),
+    s[2] + dt / 6 * (k1[2] + 2 * k2[2] + 2 * k3[2] + k4[2]),
+    s[3] + dt / 6 * (k1[3] + 2 * k2[3] + 2 * k3[3] + k4[3]),
+  ];
+}
+
+// shoot: integrate n steps, return array of UV points (+ tangents)
+function shoot(px, py, dirx, diry, speed, maxSteps = 900) {
+  const dt = 0.02;
+  let s = [px, py, speed * dirx, speed * diry];
+  const pts = [[px, py]];
+  for (let i = 0; i < maxSteps; i++) {
+    s = rk4Step(s, dt);
+    if (Math.abs(s[0]) > EXT + 0.5 || Math.abs(s[1]) > EXT + 0.5) break;
+    pts.push([s[0], s[1]]);
+  }
+  return pts;
+}
+
+/* ============================================================
+   Three.js scene
+   ============================================================ */
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+document.body.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = col(C.crust);
+scene.fog = new THREE.Fog(col(C.crust), 14, 30);
+
+const camera = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.1, 100);
+camera.up.set(0, 0, 1);                 // z-up world (UV plane is XY)
+camera.position.set(7.5, -7.5, 6);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+controls.maxPolarAngle = Math.PI * 0.49;
+controls.minDistance = 3;
+controls.maxDistance = 25;
+
+scene.add(new THREE.AmbientLight(0xffffff, 1));   // materials are unlit anyway
+
+/* ---- terrain: dark filled mesh (depth) + vector grid lines ---- */
+const N = 90;
+let terrainMesh;
+
+function rampColor(t) {
+  const f = THREE.MathUtils.clamp(t, 0, 1) * (RAMP.length - 1);
+  const i = Math.min(Math.floor(f), RAMP.length - 2);
+  return RAMP[i].clone().lerp(RAMP[i + 1], f - i);
+}
+
+function buildTerrain() {
+  if (terrainMesh) {
+    terrainMesh.forEach(m => { scene.remove(m); m.geometry.dispose(); m.material.dispose(); });
+  }
+  // sample heights, normalize for coloring
+  let hmin = Infinity, hmax = -Infinity;
+  const H = [];
+  for (let j = 0; j <= N; j++) {
+    H.push([]);
+    for (let i = 0; i <= N; i++) {
+      const h = heightAt(-EXT + 2 * EXT * i / N, -EXT + 2 * EXT * j / N);
+      H[j].push(h);
+      hmin = Math.min(hmin, h); hmax = Math.max(hmax, h);
+    }
+  }
+  const span = Math.max(hmax - hmin, 1e-6);
+  const uv = (i, j) => [-EXT + 2 * EXT * i / N, -EXT + 2 * EXT * j / N];
+
+  // filled base mesh — writes depth so back-side lines occlude
+  const pos = [], idx = [];
+  for (let j = 0; j <= N; j++) for (let i = 0; i <= N; i++) {
+    const [x, y] = uv(i, j);
+    pos.push(x, y, H[j][i]);
+  }
+  for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
+    const a = j * (N + 1) + i, b = a + 1, c = a + N + 1, d = c + 1;
+    idx.push(a, b, c, b, d, c);
+  }
+  const g1 = new THREE.BufferGeometry();
+  g1.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+  g1.setIndex(idx);
+  const fill = new THREE.Mesh(g1, new THREE.MeshBasicMaterial({
+    color: C.mantle, polygonOffset: true, polygonOffsetFactor: 2, polygonOffsetUnits: 2,
+  }));
+  scene.add(fill);
+
+  // grid lines colored by height — the "vector" look
+  const lp = [], lc = [];
+  const pushLine = (x0, y0, x1, y1, h0, h1) => {
+    const c0 = rampColor((h0 - hmin) / span), c1 = rampColor((h1 - hmin) / span);
+    lp.push(x0, y0, h0, x1, y1, h1);
+    lc.push(c0.r, c0.g, c0.b, c1.r, c1.g, c1.b);
+  };
+  const SUB = 4; // subsegments per grid cell for smooth slope
+  for (let j = 0; j <= N; j += 4) for (let i = 0; i < N; i += SUB) {
+    for (let k = 0; k < SUB; k++) {
+      const [x0, y0] = uv(i + k, j), [x1, y1] = uv(i + k + 1, j);
+      pushLine(x0, y0, x1, y1, H[j][i + k], H[j][i + k + 1]);
+    }
+  }
+  for (let i = 0; i <= N; i += 4) for (let j = 0; j < N; j += SUB) {
+    for (let k = 0; k < SUB; k++) {
+      const [x0, y0] = uv(i, j + k), [x1, y1] = uv(i, j + k + 1);
+      pushLine(x0, y0, x1, y1, H[j + k][i], H[j + k + 1][i]);
+    }
+  }
+  const g2 = new THREE.BufferGeometry();
+  g2.setAttribute("position", new THREE.Float32BufferAttribute(lp, 3));
+  g2.setAttribute("color", new THREE.Float32BufferAttribute(lc, 3));
+  const lines = new THREE.LineSegments(g2, new THREE.LineBasicMaterial({
+    vertexColors: true, transparent: true, opacity: 0.55,
+  }));
+  scene.add(lines);
+
+  terrainMesh = [fill, lines];
+}
+buildTerrain();
+
+/* ---- dotted trail rendering: shader points (per-dot size/color/alpha) ---- */
+function makeDots(maxDots) {
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.BufferAttribute(new Float32Array(maxDots * 3), 3));
+  g.setAttribute("aColor", new THREE.BufferAttribute(new Float32Array(maxDots * 3), 3));
+  g.setAttribute("aSize", new THREE.BufferAttribute(new Float32Array(maxDots), 1));
+  g.setAttribute("aAlpha", new THREE.BufferAttribute(new Float32Array(maxDots), 1));
+  g.setDrawRange(0, 0);
+  const m = new THREE.ShaderMaterial({
+    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+    vertexShader: `
+      attribute vec3 aColor; attribute float aSize; attribute float aAlpha;
+      varying vec3 vColor; varying float vAlpha;
+      void main() {
+        vColor = aColor; vAlpha = aAlpha;
+        vec4 mv = modelViewMatrix * vec4(position, 1.0);
+        gl_PointSize = aSize * (240.0 / -mv.z);
+        gl_Position = projectionMatrix * mv;
+      }`,
+    fragmentShader: `
+      varying vec3 vColor; varying float vAlpha;
+      void main() {
+        float d = length(gl_PointCoord - 0.5);
+        float a = smoothstep(0.5, 0.32, d) * vAlpha;
+        if (a < 0.003) discard;
+        gl_FragColor = vec4(vColor, a);
+      }`,
+  });
+  const pts = new THREE.Points(g, m);
+  pts.frustumCulled = false;
+  scene.add(pts);
+  return pts;
+}
+
+const lift = (x, y) => new THREE.Vector3(x, y, heightAt(x, y));
+
+// resample UV polyline by arc length into n dots
+function resample(uvPts, n) {
+  const d = [0];
+  for (let i = 1; i < uvPts.length; i++)
+    d.push(d[i - 1] + Math.hypot(uvPts[i][0] - uvPts[i - 1][0], uvPts[i][1] - uvPts[i - 1][1]));
+  const total = d[d.length - 1];
+  if (total < 1e-9) return [];
+  const out = [];
+  let j = 0;
+  for (let k = 0; k < n; k++) {
+    const target = total * k / (n - 1);
+    while (j < d.length - 2 && d[j + 1] < target) j++;
+    const t = (target - d[j]) / Math.max(d[j + 1] - d[j], 1e-9);
+    out.push([uvPts[j][0] + (uvPts[j + 1][0] - uvPts[j][0]) * t,
+              uvPts[j][1] + (uvPts[j + 1][1] - uvPts[j][1]) * t]);
+  }
+  return out;
+}
+
+// fill a dots geometry with tapered comet colors (tail → head)
+function writeDots(dotsObj, uvPts, colorA, colorB, baseSize, alpha, reveal = 1) {
+  const n = Math.floor(uvPts.length * reveal);
+  const pos = dotsObj.geometry.attributes.position;
+  const ac = dotsObj.geometry.attributes.aColor;
+  const as = dotsObj.geometry.attributes.aSize;
+  const aa = dotsObj.geometry.attributes.aAlpha;
+  const ca = col(colorA), cb = col(colorB), c = new THREE.Color();
+  for (let k = 0; k < n; k++) {
+    const p = lift(uvPts[k][0], uvPts[k][1]);
+    pos.setXYZ(k, p.x, p.y, p.z + 0.015);
+    const t = n > 1 ? k / (n - 1) : 1;
+    c.copy(ca).lerp(cb, t);
+    ac.setXYZ(k, c.r, c.g, c.b);
+    as.setX(k, baseSize * (0.28 + 0.72 * t));          // taper: small butt → big head
+    const tailFade = THREE.MathUtils.smoothstep(t, 0, 0.18);
+    aa.setX(k, alpha * (0.35 + 0.65 * tailFade));
+  }
+  dotsObj.geometry.setDrawRange(0, n);
+  pos.needsUpdate = ac.needsUpdate = as.needsUpdate = aa.needsUpdate = true;
+  return n;
+}
+
+/* ---- shooter point + muzzle ring ---- */
+function glowTexture(inner, outer) {
+  const cv = document.createElement("canvas"); cv.width = cv.height = 128;
+  const ctx = cv.getContext("2d");
+  const g = ctx.createRadialGradient(64, 64, 4, 64, 64, 64);
+  g.addColorStop(0, inner); g.addColorStop(0.35, outer); g.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = g; ctx.fillRect(0, 0, 128, 128);
+  const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+const shooter = new THREE.Sprite(new THREE.SpriteMaterial({
+  map: glowTexture("rgba(230,255,225,1)", "rgba(166,227,161,0.55)"),
+  transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+}));
+shooter.scale.set(0.55, 0.55, 1);
+scene.add(shooter);
+
+const ring = new THREE.Mesh(
+  new THREE.RingGeometry(0.22, 0.27, 48),
+  new THREE.MeshBasicMaterial({ color: C.green, transparent: true, opacity: 0.9, side: THREE.DoubleSide, depthWrite: false }),
+);
+scene.add(ring);
+
+let shooterUV = new THREE.Vector2(-1.6, -1.6);
+function placeShooter(u, v) {
+  shooterUV.set(u, v);
+  const p = lift(u, v);
+  shooter.position.copy(p).z += 0.1;
+  // ring lies flat-ish on the surface (facing the normal ≈ z here)
+  ring.position.copy(p).z += 0.03;
+  ring.rotation.set(0, 0, Math.random() * Math.PI);
+}
+placeShooter(shooterUV.x, shooterUV.y);
+
+// soft pulse
+function pulse(t) {
+  const s = 0.5 + 0.06 * Math.sin(t * 2.4);
+  shooter.scale.set(s, s, 1);
+  ring.material.opacity = 0.55 + 0.35 * Math.sin(t * 2.4);
+}
+
+/* ---- shot management ---- */
+const MAX_DOTS = 160;
+let ghosts = [];       // finished trails, dimmed
+let active = null;     // { dots, uvPts, t0, duration }
+
+function makeGhost() {
+  const dots = makeDots(MAX_DOTS);
+  ghosts.push(dots);
+  if (ghosts.length > 5) {
+    const old = ghosts.shift();
+    scene.remove(old); old.geometry.dispose(); old.material.dispose();
+  }
+  ghosts.forEach((g2, i) => g2.material.opacity = 0.16 + 0.1 * i);  // older = dimmer
+  return dots;
+}
+
+const previewDots = makeDots(MAX_DOTS);
+
+function fire(uvPts) {
+  if (active) {   // promote interrupted shot to ghost
+    const left = writeDots(active.dots, active.uvPts, C.mauve, C.peach, 0.16, 0.2);
+    if (!left) { scene.remove(active.dots); }
+  }
+  const dots = makeDots(MAX_DOTS);
+  const length = uvPts.length > 1
+    ? Math.hypot(uvPts.at(-1)[0] - uvPts[0][0], uvPts.at(-1)[1] - uvPts[0][1]) : 0;
+  active = {
+    dots, uvPts,
+    t0: performance.now(),
+    duration: 900 + length * 260,
+  };
+}
+
+function updateActive(now) {
+  if (!active) return;
+  const t = (now - active.t0) / active.duration;
+  if (t >= 1) {   // done → becomes ghost, spawn impact flash
+    writeDots(active.dots, active.uvPts, C.mauve, C.peach, 0.16, 0.35);
+    ghosts.push(active.dots);
+    if (ghosts.length > 5) { const o = ghosts.shift(); scene.remove(o); o.geometry.dispose(); o.material.dispose(); }
+    ghosts.forEach((g2, i) => g2.material.opacity = 0.16 + 0.1 * i);
+    impactFlash(active.uvPts.at(-1));
+    active = null;
+    return;
+  }
+  const reveal = 0.15 + 0.85 * t;   // comet grows as it flies
+  const n = writeDots(active.dots, active.uvPts, C.mauve, C.peach, 0.2, 0.95, reveal);
+  // move a bright head dot along the trail
+  const idx = Math.max(n - 1, 0);
+  const p = lift(active.uvPts[idx][0], active.uvPts[idx][1]);
+  head.position.copy(p).z += 0.05;
+  head.visible = true;
+}
+
+/* ---- impact flash ---- */
+const head = new THREE.Sprite(new THREE.SpriteMaterial({
+  map: glowTexture("rgba(255,244,220,1)", "rgba(250,179,135,0.6)"),
+  transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+}));
+head.scale.set(0.5, 0.5, 1); head.visible = false;
+scene.add(head);
+
+const impact = new THREE.Sprite(new THREE.SpriteMaterial({
+  map: glowTexture("rgba(255,255,255,1)", "rgba(243,139,168,0.7)"),
+  transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0,
+}));
+impact.scale.set(1.2, 1.2, 1);
+scene.add(impact);
+let impactT = -1;
+function impactFlash(lastUV) {
+  const p = lift(lastUV[0], lastUV[1]);
+  impact.position.copy(p).z += 0.08;
+  impactT = performance.now();
+}
+function updateImpact(now) {
+  if (impactT < 0) return;
+  const t = (now - impactT) / 600;
+  if (t >= 1) { impact.material.opacity = 0; impactT = -1; return; }
+  impact.material.opacity = (1 - t) * 0.9;
+  const s = 0.4 + 2.2 * t;
+  impact.scale.set(s, s, 1);
+}
+
+/* ============================================================
+   Input: raycast picking, drag-aim, click-to-move
+   ============================================================ */
+const ray = new THREE.Raycaster();
+const ndc = new THREE.Vector2();
+function pickTerrain(e) {
+  ndc.set((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
+  ray.setFromCamera(ndc, camera);
+  const hit = ray.intersectObject(terrainMesh[0])[0];
+  return hit ? new THREE.Vector2(hit.point.x, hit.point.y) : null;
+}
+
+let aiming = false, downAt = null, downUV = null, moved = false;
+
+renderer.domElement.addEventListener("pointerdown", (e) => {
+  if (e.button !== 0) return;
+  downAt = { x: e.clientX, y: e.clientY };
+  moved = false;
+  const uv = pickTerrain(e);
+  downUV = uv;
+  if (uv && uv.distanceTo(shooterUV) < 0.9) {
+    aiming = true;
+    controls.enabled = false;
+    renderer.domElement.setPointerCapture(e.pointerId);
+  }
+});
+
+renderer.domElement.addEventListener("pointermove", (e) => {
+  if (downAt && Math.hypot(e.clientX - downAt.x, e.clientY - downAt.y) > 6) moved = true;
+  if (!aiming) return;
+  const uv = pickTerrain(e);
+  if (!uv) return;
+  const d = uv.clone().sub(shooterUV);
+  const len = Math.min(d.length(), 2.4);
+  if (len < 0.05) { previewDots.geometry.setDrawRange(0, 0); speedEl.textContent = "—"; return; }
+  d.normalize();
+  const speed = THREE.MathUtils.clamp(len * 1.6, 0.3, 4.2);
+  speedEl.textContent = speed.toFixed(2);
+  const pts = shoot(shooterUV.x, shooterUV.y, d.x, d.y, speed);
+  const res = resample(pts, Math.min(MAX_DOTS, Math.max(12, Math.floor(length3D(pts) * 14))));
+  currentPreview = { pts: res, dir: d, speed };
+  writeDots(previewDots, res, C.green, C.teal, 0.15, 0.55);
+});
+
+function length3D(uvPts) {
+  let L = 0;
+  for (let i = 1; i < uvPts.length; i++)
+    L += lift(uvPts[i][0], uvPts[i][1]).distanceTo(lift(uvPts[i - 1][0], uvPts[i - 1][1]));
+  return L;
+}
+
+renderer.domElement.addEventListener("pointerup", (e) => {
+  if (e.button !== 0) return;
+  if (aiming) {
+    aiming = false;
+    controls.enabled = true;
+    previewDots.geometry.setDrawRange(0, 0);
+    if (currentPreview && currentPreview.pts.length > 4) fire(currentPreview.pts);
+    currentPreview = null;
+    speedEl.textContent = "—";
+  } else if (downAt && !moved && downUV) {
+    // simple click on terrain → move the shooter there
+    placeShooter(downUV.x, downUV.y);
+  }
+  downAt = null; downUV = null;
+});
+
+let currentPreview = null;
+const speedEl = document.getElementById("speedVal");
+
+document.getElementById("reload").addEventListener("click", () => {
+  newTerrain(); buildTerrain();
+  placeShooter(shooterUV.x, shooterUV.y);
+  ghosts.forEach(g2 => { scene.remove(g2); g2.geometry.dispose(); g2.material.dispose(); });
+  ghosts = [];
+  if (active) { scene.remove(active.dots); active = null; }
+  previewDots.geometry.setDrawRange(0, 0);
+});
+addEventListener("keydown", (e) => {
+  if (e.key === "r" || e.key === "R") document.getElementById("reload").click();
+});
+
+addEventListener("resize", () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+
+/* ============================================================
+   Loop
+   ============================================================ */
+renderer.setAnimationLoop((tms) => {
+  const now = performance.now();
+  pulse(now / 1000);
+  updateActive(now);
+  updateImpact(now);
+  controls.update();
+  renderer.render(scene, camera);
+});
+</script>
+</body>
+</html>
