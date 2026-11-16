@@ -42,6 +42,37 @@ the ones a shooter cares about:
 - `norm_sq_tangentX`: `‖tangentX h p‖² = 1 + (∂ₓh)²` — the U edge of the quad
   gets longer as the slope grows.
 
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 260" font-family="sans-serif" font-size="14">
+  <!-- UV plane -->
+  <g transform="translate(40,60)">
+    <rect x="0" y="0" width="160" height="120" fill="#dfe9f3" stroke="#5b7fa6" stroke-width="2"/>
+    <g stroke="#9db8d2" stroke-width="1">
+      <line x1="40" y1="0" x2="40" y2="120"/><line x1="80" y1="0" x2="80" y2="120"/><line x1="120" y1="0" x2="120" y2="120"/>
+      <line x1="0" y1="40" x2="160" y2="40"/><line x1="0" y1="80" x2="160" y2="80"/>
+    </g>
+    <circle cx="80" cy="60" r="5" fill="#d33"/>
+    <text x="80" y="145" text-anchor="middle" fill="#345">UV / parameter plane (x, y)</text>
+    <text x="80" y="163" text-anchor="middle" fill="#888" font-size="12">the bullet's position lives here</text>
+  </g>
+  <!-- arrow -->
+  <g stroke="#555" stroke-width="2" fill="#555">
+    <line x1="240" y1="120" x2="300" y2="120"/>
+    <polygon points="300,114 312,120 300,126"/>
+  </g>
+  <text x="276" y="108" text-anchor="middle" fill="#555">lift</text>
+  <!-- heightmap surface -->
+  <g transform="translate(330,30)">
+    <polygon points="40,140 240,140 320,60 120,60" fill="#cfe3c8" stroke="#4a7a4a" stroke-width="2"/>
+    <g stroke="#7fae7a" stroke-width="1" fill="none">
+      <polygon points="85,140 265,140 320,88 140,88" opacity="0.7"/>
+      <polygon points="130,140 290,140 320,116 160,116" opacity="0.5"/>
+    </g>
+    <circle cx="180" cy="102" r="5" fill="#d33"/>
+    <text x="180" y="180" text-anchor="middle" fill="#345">the mesh graph h: (x, y) → (x, y, h(x,y))</text>
+    <text x="180" y="198" text-anchor="middle" fill="#888" font-size="12">same red point, now displaced along +z</text>
+  </g>
+</svg>
+
 **Key point for everything that follows:** the whole simulation runs in the
 **UV plane**. We never integrate in 3D; we integrate `(x(t), y(t))` and
 evaluate `h` to get the 3D point. Exactly like simulating a vehicle on a
@@ -133,6 +164,28 @@ Read `geoAccel` like a shader:
 In words: *"the surface curves away under me by amount `vᵀHv`; reproject that
 correction through the UV distortion `G⁻¹` and steer against it."*
 
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 300" font-family="sans-serif" font-size="14">
+  <!-- tilted surface -->
+  <polygon points="60,230 360,230 500,110 200,110" fill="#cfe3c8" stroke="#4a7a4a" stroke-width="2" opacity="0.9"/>
+  <!-- curve on surface -->
+  <path d="M 110 215 Q 260 150 430 140" fill="none" stroke="#d33" stroke-width="3"/>
+  <circle cx="230" cy="163" r="6" fill="#222"/>
+  <!-- tangent velocity -->
+  <g stroke="#1a6bb5" stroke-width="3" fill="#1a6bb5">
+    <line x1="230" y1="163" x2="310" y2="150"/>
+    <polygon points="304,143 322,147 312,160"/>
+  </g>
+  <text x="322" y="146" fill="#1a6bb5">velocity v (in the surface)</text>
+  <!-- acceleration along normal -->
+  <g stroke="#7a1ab5" stroke-width="3" fill="#7a1ab5">
+    <line x1="230" y1="163" x2="255" y2="100"/>
+    <polygon points="247,100 261,88 262,106"/>
+  </g>
+  <text x="270" y="92" fill="#7a1ab5">acceleration ⟂ surface (along normal)</text>
+  <text x="360" y="270" text-anchor="middle" fill="#345">the rule: the 3D acceleration of graph h γ(t) may only point along normal h γ(t)</text>
+  <text x="360" y="290" text-anchor="middle" fill="#888" font-size="12">projected into UV space this is exactly γ̈ = -(G⁻¹ *ᵥ ((vᵀHv) • ∇h))</text>
+</svg>
+
 ### Are geodesics just straight lines in UV? (the honest answer)
 
 **Only if the heightmap is a perfect plane.** The curvature of the UV path
@@ -168,6 +221,34 @@ cannot be a straight 3D line, it just wiggles vertically with `h` while
 being as straight as the surface allows. If UV paths were straight lines,
 `shoot` would be a raycast; the whole point of `geoAccel` is that the UV
 velocity must be steered, one small time step at a time.
+
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 280" font-family="sans-serif" font-size="14">
+  <!-- flat map: curved arc -->
+  <g transform="translate(30,20)">
+    <rect x="0" y="0" width="260" height="200" fill="#dfe9f3" stroke="#5b7fa6" stroke-width="2"/>
+    <g stroke="#9db8d2" stroke-width="1">
+      <line x1="65" y1="0" x2="65" y2="200"/><line x1="130" y1="0" x2="130" y2="200"/><line x1="195" y1="0" x2="195" y2="200"/>
+      <line x1="0" y1="50" x2="260" y2="50"/><line x1="0" y1="100" x2="260" y2="100"/><line x1="0" y1="150" x2="260" y2="150"/>
+    </g>
+    <path d="M 30 170 Q 130 40 230 170" fill="none" stroke="#d33" stroke-width="3"/>
+    <circle cx="30" cy="170" r="5" fill="#d33"/><circle cx="230" cy="170" r="5" fill="#d33"/>
+    <text x="130" y="225" text-anchor="middle" fill="#345">UV map: the geodesic bends</text>
+    <text x="130" y="244" text-anchor="middle" fill="#888" font-size="12">like a great-circle route on a flat map</text>
+  </g>
+  <!-- arrow -->
+  <g stroke="#555" stroke-width="2" fill="#555">
+    <line x1="330" y1="120" x2="388" y2="120"/>
+    <polygon points="388,114 400,120 388,126"/>
+  </g>
+  <!-- surface: intrinsically straight -->
+  <g transform="translate(420,20)">
+    <polygon points="20,180 240,180 330,100 110,100" fill="#cfe3c8" stroke="#4a7a4a" stroke-width="2"/>
+    <path d="M 60 165 Q 165 90 280 160" fill="none" stroke="#d33" stroke-width="3"/>
+    <circle cx="60" cy="165" r="5" fill="#d33"/><circle cx="280" cy="160" r="5" fill="#d33"/>
+    <text x="175" y="225" text-anchor="middle" fill="#345">on the surface: as straight as possible</text>
+    <text x="175" y="244" text-anchor="middle" fill="#888" font-size="12">zero tangential acceleration, glued to the surface</text>
+  </g>
+</svg>
 
 ---
 
@@ -229,6 +310,18 @@ Familiar problems: it undershoots on curves (each step cuts the corner of
 the true path) and the error accumulates every step. On a strongly curved
 surface the shot visibly spirals off the geodesic.
 
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 240" font-family="sans-serif" font-size="14">
+  <path d="M 60 190 Q 360 60 660 60" fill="none" stroke="#bbb" stroke-width="6" opacity="0.5"/>
+  <path d="M 60 190 L 200 140 L 330 110 L 460 92 L 600 82" fill="none" stroke="#d33" stroke-width="3" stroke-dasharray="7 5"/>
+  <g stroke="#1a6bb5" stroke-width="2.5" fill="#1a6bb5">
+    <line x1="200" y1="140" x2="252" y2="122"/><polygon points="247,114 262,118 254,129"/>
+    <line x1="330" y1="110" x2="384" y2="96"/><polygon points="380,88 394,93 386,103"/>
+    <line x1="460" y1="92" x2="516" y2="80"/><polygon points="512,73 526,78 518,88"/>
+  </g>
+  <g fill="#d33"><circle cx="60" cy="190" r="5"/><circle cx="200" cy="140" r="5"/><circle cx="330" cy="110" r="5"/><circle cx="460" cy="92" r="5"/><circle cx="600" cy="82" r="5"/></g>
+  <text x="360" y="225" text-anchor="middle" fill="#345">eulerStep: sample slope once, run straight, repeat — drifts off the true path (grey)</text>
+</svg>
+
 ### Runge–Kutta 4 (the one you'll actually ship)
 
 Same `StepMethod` interface, four `field` evaluations per step: slope at the
@@ -252,6 +345,23 @@ def rk4Step : StepMethod := fun h s dt =>
 In graphics terms: Euler is forward-difference, RK4 is central-difference
 with a spline's worth of samples. In game-physics terms: RK4 is to Euler
 what a proper spring solver is to "add gravity, clamp position".
+
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 250" font-family="sans-serif" font-size="13">
+  <path d="M 60 190 Q 360 60 660 60" fill="none" stroke="#bbb" stroke-width="6" opacity="0.5"/>
+  <g stroke-linecap="round">
+    <g stroke="#1a6bb5" stroke-width="3"><line x1="80" y1="182" x2="140" y2="160"/><polygon points="135,151 152,155 143,166" fill="#1a6bb5"/></g>
+    <text x="100" y="148" fill="#1a6bb5">k₁ = field h s        (start)</text>
+    <g stroke="#3aa04a" stroke-width="3"><line x1="170" y1="171" x2="238" y2="150"/><polygon points="232,141 249,146 240,157" fill="#3aa04a"/></g>
+    <text x="200" y="196" fill="#3aa04a">k₂ = field h (s + dt/2 • k₁)</text>
+    <g stroke="#c47f00" stroke-width="3"><line x1="260" y1="160" x2="330" y2="138"/><polygon points="324,129 341,134 332,145" fill="#c47f00"/></g>
+    <text x="280" y="125" fill="#c47f00">k₃ = field h (s + dt/2 • k₂)</text>
+    <g stroke="#7a1ab5" stroke-width="3"><line x1="350" y1="146" x2="426" y2="123"/><polygon points="420,114 437,119 428,130" fill="#7a1ab5"/></g>
+    <text x="400" y="103" fill="#7a1ab5">k₄ = field h (s + dt • k₃)  (end)</text>
+  </g>
+  <path d="M 80 182 Q 240 120 440 120" fill="none" stroke="#d33" stroke-width="3"/>
+  <circle cx="80" cy="182" r="5" fill="#d33"/><circle cx="440" cy="120" r="5" fill="#d33"/>
+  <text x="360" y="235" text-anchor="middle" fill="#345">rk4Step: sₙ₊₁ = s + dt/6 • (k₁ + 2k₂ + 2k₃ + k₄) — the step lands on the true path (grey)</text>
+</svg>
 
 ### The trajectory
 
