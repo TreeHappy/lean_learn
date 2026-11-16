@@ -50,7 +50,7 @@
 </head>
 <body>
 <div id="ui">
-  <div id="title">BRANE<small>geodesic shooting sandbox</small></div>
+  <div id="title">BRANE<small>geodesic shooting sandbox</small><a href="./notes/" style="color:var(--teal);text-decoration:none">↗ docs</a></div>
   <div id="speed">power<br><span class="v" id="speedVal">—</span></div>
   <div id="hint">
     <b>drag from the green point</b> — aim &amp; power, release to fire<br>
@@ -205,7 +205,8 @@ const N = 90;
 let terrainMesh;
 
 function rampColor(t) {
-  const f = THREE.MathUtils.clamp(t, 0, 1) * (RAMP.length - 1);
+  if (!Number.isFinite(t)) t = 0;
+  const f = Math.min(Math.max(t, 0), 1) * (RAMP.length - 1);
   const i = Math.min(Math.floor(f), RAMP.length - 2);
   return RAMP[i].clone().lerp(RAMP[i + 1], f - i);
 }
@@ -255,15 +256,17 @@ function buildTerrain() {
   };
   const SUB = 4; // subsegments per grid cell for smooth slope
   for (let j = 0; j <= N; j += 4) for (let i = 0; i < N; i += SUB) {
-    for (let k = 0; k < SUB; k++) {
-      const [x0, y0] = uv(i + k, j), [x1, y1] = uv(i + k + 1, j);
-      pushLine(x0, y0, x1, y1, H[j][i + k], H[j][i + k + 1]);
+    const iEnd = Math.min(i + SUB, N);
+    for (let k = i; k < iEnd; k++) {
+      const [x0, y0] = uv(k, j), [x1, y1] = uv(k + 1, j);
+      pushLine(x0, y0, x1, y1, H[j][k], H[j][k + 1]);
     }
   }
   for (let i = 0; i <= N; i += 4) for (let j = 0; j < N; j += SUB) {
-    for (let k = 0; k < SUB; k++) {
-      const [x0, y0] = uv(i, j + k), [x1, y1] = uv(i, j + k + 1);
-      pushLine(x0, y0, x1, y1, H[j + k][i], H[j + k + 1][i]);
+    const jEnd = Math.min(j + SUB, N);
+    for (let k = j; k < jEnd; k++) {
+      const [x0, y0] = uv(i, k), [x1, y1] = uv(i, k + 1);
+      pushLine(x0, y0, x1, y1, H[k][i], H[k + 1][i]);
     }
   }
   const g2 = new THREE.BufferGeometry();
