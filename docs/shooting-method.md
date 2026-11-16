@@ -35,85 +35,94 @@ engine concepts, with the exact Lean names:
 Some facts are already *proved* in `DifferentialGeometry.lean`, and they are
 the ones a shooter cares about:
 
-- `normal_eq`: `normal h p = (-∂ₓh, -∂ᵧh, 1)` — the normal is never zero,
-  its z-component is always 1.
-- `norm_sq_normal`: `‖normal h p‖² = 1 + (∂ₓh)² + (∂ᵧh)²` — the heightmap
-  slope stretches the mesh, exactly like a displaced-grid area scale factor.
-- `norm_sq_tangentX`: `‖tangentX h p‖² = 1 + (∂ₓh)²` — the U edge of the quad
-  gets longer as the slope grows.
+> [!NOTE]
+> **Lemma (DiffGeom.normal_eq, DiffGeom.normal_ne_zero).**
+> `normal h p = (-∂ₓh, -∂ᵧh, 1)`. In particular the normal is never zero:
+> its z-component is always `1`.
+
+> [!NOTE]
+> **Lemma (DiffGeom.norm_sq_normal).**
+> `‖normal h p‖² = 1 + (∂ₓh)² + (∂ᵧh)²` — the heightmap slope stretches the
+> mesh, exactly like a displaced-grid area scale factor.
+
+> [!NOTE]
+> **Lemma (DiffGeom.norm_sq_tangentX).**
+> `‖tangentX h p‖² = 1 + (∂ₓh)²` — the U edge of the quad gets longer as
+> the slope grows.
 
 ![UV / parameter plane lifted to the heightmap mesh](figures/heightmap-lift.svg)
 
-**Key point for everything that follows:** the whole simulation runs in the
-**UV plane**. We never integrate in 3D; we integrate `(x(t), y(t))` and
-evaluate `h` to get the 3D point. Exactly like simulating a vehicle on a
-heightfield: cheap 2D state, 3D render.
+> [!IMPORTANT]
+> **Key point for everything that follows:** the whole simulation runs in
+> the **UV plane**. We never integrate in 3D; we integrate `(x(t), y(t))`
+> and evaluate `h` to get the 3D point. Exactly like simulating a vehicle
+> on a heightfield: cheap 2D state, 3D render.
 
-### Notation, stated once and strictly
+### 1.1 Notation
 
-The Lean code uses a handful of notations that are never explained at their
-use sites, so here they are, defined before they appear. In Lean a
-2-dimensional real vector is not a pair of floats but a *function* from the
-two-element index type `Fin 2` to `ℝ`:
+The following notational conventions are fixed here and used throughout the
+remainder of this document without further remark.
 
-```lean
-abbrev Vel2 : Type := Fin 2 → ℝ   -- DiffGeom.Vel2
-```
+> [!NOTE]
+> **Vectors as functions.** In Lean, a 2-dimensional real vector is not a
+> pair of floats but a *function* from the two-element index type `Fin 2`
+> to `ℝ`:
+>
+> ```lean
+> abbrev Vel2 : Type := Fin 2 → ℝ   -- DiffGeom.Vel2
+> ```
+>
+> An element `v : Vel2` is written `v`; its components are the function
+> values `v 0` and `v 1`. In ordinary mathematical notation we write
+> `v = (v₀, v₁)` with `v₀ := v 0` and `v₁ := v 1`. In prose we use `v₀, v₁`;
+> when quoting Lean verbatim we use `v 0, v 1`.
 
-An element `v : Vel2` is therefore written `v`, its first component is the
-function value `v 0`, its second is `v 1`. In ordinary mathematical
-notation, `v` is the vector `(v₀, v₁)` with
+> [!IMPORTANT]
+> **Notation table.** The following notations appear in the Lean sources
+> and are never re-explained at their use sites.
+>
+> | Notation | Lean name | Meaning |
+> |---|---|---|
+> | `r • x` | `SMul.smul` | scalar multiplication `r·x` of a real number `r` with a vector/matrix `x` |
+> | `M *ᵥ v` | `Matrix.mulVec` | matrix–vector product `M·v` (`M` acts on the column vector `v`) |
+> | `u ⬝ᵥ v` | `Matrix.dotProduct` | the dot product `Σᵢ uᵢ vᵢ` of two vectors |
+> | `![a, b]` | `Matrix.vecCons` literal | the vector `(a, b)` as a function `Fin 2 → ℝ`; more generally `![a, b, c]` a 3-vector |
+> | `!![a, b; c, d]` | `Matrix.of` literal | the 2×2 matrix with rows `(a, b)` and `(c, d)` |
+> | `p.1`, `p.2` | `Prod.fst`, `Prod.snd` | the coordinates of `p : ℝ × ℝ`, i.e. `x` and `y` |
+> | `⟪u, v⟫` | `inner` | the Euclidean inner product (same value as `u ⬝ᵥ v`) |
 
-```text
-v₀ := v 0,   v₁ := v 1
-```
-
-and we will use `v₀, v₁` in prose and `v 0, v 1` when quoting Lean. The
-other notations:
-
-| Notation | Lean name | Meaning |
-|---|---|---|
-| `r • x` | `SMul.smul` | scalar multiplication `r·x` of a real number `r` with a vector/matrix `x` |
-| `M *ᵥ v` | `Matrix.mulVec` | matrix–vector product `M·v` (`M` acts on the column vector `v`) |
-| `u ⬝ᵥ v` | `Matrix.dotProduct` | the dot product `Σᵢ uᵢ vᵢ` of two vectors |
-| `![a, b]` | `Matrix.vecCons` literal | the vector `(a, b)` as a function `Fin 2 → ℝ`; more generally `![a, b, c]` a 3-vector |
-| `!![a, b; c, d]` | `Matrix.of` literal | the 2×2 matrix with rows `(a, b)` and `(c, d)` |
-| `p.1`, `p.2` | `Prod.fst`, `Prod.snd` | the coordinates of `p : ℝ × ℝ`, i.e. `x` and `y` |
-| `⟪u, v⟫` | `inner` | the Euclidean inner product (same value as `u ⬝ᵥ v`) |
-
-So for example the combination that `jacobian_mulVec` proves the Jacobian
-produces,
-
-```lean
-v 0 • tangentX h p + v 1 • tangentY h p
-```
-
-reads in strict mathematical notation as
-
-```text
-v₀ · ∂ₓσ(p) + v₁ · ∂ᵧσ(p),
-```
-
-where `v₀ = v 0` and `v₁ = v 1` are the two components of the UV velocity
-`v`, `•` is scalar multiplication, and the sum is the corresponding tangent
-vector — the familiar "local-to-world transform of a 2D velocity through the
-mesh Jacobian".
+> [!TIP]
+> **Reading example.** The combination that `jacobian_mulVec` proves the
+> Jacobian produces,
+>
+> ```lean
+> v 0 • tangentX h p + v 1 • tangentY h p
+> ```
+>
+> reads, in strict mathematical notation, as
+>
+> ```text
+> v₀ · ∂ₓσ(p) + v₁ · ∂ᵧσ(p),
+> ```
+>
+> where `v₀ = v 0` and `v₁ = v 1` are the components of the UV velocity
+> `v`, `•` is scalar multiplication, and the sum is the corresponding
+> tangent vector — the familiar "local-to-world transform of a 2D velocity
+> through the mesh Jacobian".
 
 ---
 
 ## 2. The weird physics rule
 
-On a normal heightfield you'd do gravity + friction + collision. Here the
-marble obeys one commandment:
+> [!IMPORTANT]
+> **Definition (geodesic).** The acceleration of the 3D point must point
+> exactly along the surface normal. Nothing else. No gravity, no friction —
+> just "stay glued to the surface". A curve obeying this rule is called a
+> **geodesic**.
 
-> **The acceleration of the 3D point must point exactly along the surface
-> normal. Nothing else. No gravity, no friction — just "stay glued to the
-> surface".**
-
-A curve obeying this rule is a **geodesic**. Intuition: the path a stretched
-rubber band takes when pinned at both ends and pressed onto the surface; or
-the path you'd walk on the terrain feeling no *turning* force, only the
-surface curving under your feet.
+Intuition: the path a stretched rubber band takes when pinned at both ends
+and pressed onto the surface; or the path you'd walk on the terrain feeling
+no *turning* force, only the surface curving under your feet.
 
 ### From the rule to a formula, in four steps (all matrices)
 
@@ -195,13 +204,15 @@ correction through the UV distortion `G⁻¹` and steer against it."*
 **Only if the heightmap is a perfect plane.** The curvature of the UV path
 comes entirely from `hessQuad = vᵀHv`:
 
-- If `h(x, y) = a·x + b·y + c`, Lean already proves all second partials are
-  zero (`partialXX_planeHeight`, `partialXY_planeHeight`,
-  `partialYY_planeHeight`), so `H = 0`, `hessQuad = 0`, and
-  `geoAccel = 0` for *every* velocity. The UV path is `pos += dt * vel`
-  forever: straight lines in UV, straight in 3D. Degenerate case.
-- On any real heightmap, `vᵀHv` is generally nonzero, so `geoAccel ≠ 0`
-  and the UV velocity genuinely turns as it rolls.
+> [!NOTE]
+> **Degenerate case (the plane).** If `h(x, y) = a·x + b·y + c`, Lean
+> already proves all second partials are zero (`partialXX_planeHeight`,
+> `partialXY_planeHeight`, `partialYY_planeHeight`), so `H = 0`,
+> `hessQuad = 0`, and `geoAccel = 0` for *every* velocity. The UV path is
+> `pos += dt * vel` forever: straight lines in UV, straight in 3D.
+
+On any real heightmap, `vᵀHv` is generally nonzero, so `geoAccel ≠ 0`
+and the UV velocity genuinely turns as it rolls.
 
 The mental model: **the UV plane is a distorted map of the surface**, like an
 equirectangular map of Earth. Great-circle flight routes are perfectly
@@ -214,17 +225,21 @@ possible on the actual surface**. Flat slope along travel → little
 distortion → nearly straight UV path. Strong curvature along travel
 (`vᵀHv` large) → strong bending.
 
-Concrete example straight out of Lean: the paraboloid `bowlHeight x y = x² + y²`
-has `partialXX = partialYY = 2` (proved in `DifferentialGeometry.lean`), so
-`H = 2I` and `vᵀHv = 2‖v‖²` — nonzero for every nonzero velocity. A shot
-across the bowl curves in UV even on this perfectly symmetric surface.
+> [!TIP]
+> **Concrete example, straight out of Lean.** The paraboloid
+> `bowlHeight x y = x² + y²` has `partialXX = partialYY = 2` (proved in
+> `DifferentialGeometry.lean`), so `H = 2I` and `vᵀHv = 2‖v‖²` — nonzero
+> for every nonzero velocity. A shot across the bowl curves in UV even on
+> this perfectly symmetric surface.
 
-And a terminology trap: "straight" is always *intrinsic* (zero tangential
-acceleration), never a straight line in ℝ³ — on a curved surface a geodesic
-cannot be a straight 3D line, it just wiggles vertically with `h` while
-being as straight as the surface allows. If UV paths were straight lines,
-`shoot` would be a raycast; the whole point of `geoAccel` is that the UV
-velocity must be steered, one small time step at a time.
+> [!WARNING]
+> **Terminology trap.** "Straight" always means *intrinsic* (zero
+> tangential acceleration), never a straight line in ℝ³ — on a curved
+> surface a geodesic cannot be a straight 3D line; it just wiggles
+> vertically with `h` while being as straight as the surface allows. If
+> UV paths were straight lines, `shoot` would be a raycast; the whole
+> point of `geoAccel` is that the UV velocity must be steered, one small
+> time step at a time.
 
 ![the UV map distorts: the geodesic bends in UV to stay straight on the surface](figures/distorted-map.svg)
 
@@ -371,9 +386,10 @@ is, with the exact Lean calls:
 4. Not happy? Retune `p`, `dir`, `speed` (and, for accuracy, `dt` / `n`)
    and go to 1.
 
-Note what is *not* in the loop: any target condition. `shoot` integrates a
-fixed number of steps; stopping at a boundary, hitting a goal point, or
-bisection on the aim angle are all future work on top of it.
+> [!WARNING]
+> Note what is *not* in the loop: any target condition. `shoot` integrates
+> a fixed number of steps; stopping at a boundary, hitting a goal point,
+> or bisection on the aim angle are all future work on top of it.
 
 ---
 
