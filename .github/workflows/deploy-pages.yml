@@ -31,6 +31,17 @@ jobs:
           curl https://elan.lean-lang.org/elan-init.sh -sSf | sh -s -- -y
           echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
 
+      # Verso + deps compile from source on a cold runner; cache so only
+      # note changes rebuild.
+      - name: Cache Lake build
+        uses: actions/cache@v4
+        with:
+          path: |
+            notes/.lake/packages
+            notes/.lake/build
+          key: lake-${{ runner.os }}-${{ hashFiles('notes/lean-toolchain', 'notes/lake-manifest.json') }}
+          restore-keys: lake-${{ runner.os }}-
+
       - name: Build Verso notes
         run: cd notes && lake exe notes
 
