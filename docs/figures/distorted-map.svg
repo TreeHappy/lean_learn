@@ -1,27 +1,25 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 280" font-family="sans-serif" font-size="14">
-  <!-- flat map: curved arc -->
+
   <g transform="translate(30,20)">
-    <rect x="0" y="0" width="260" height="200" fill="#dfe9f3" stroke="#5b7fa6" stroke-width="2"/>
-    <g stroke="#9db8d2" stroke-width="1">
+    <rect x="0" y="0" width="260" height="200" fill="#89b4fa" fill-opacity="0.12" stroke="#89b4fa" stroke-width="2"/>
+    <g stroke="#6c7086" stroke-width="0.8" opacity="0.6">
       <line x1="65" y1="0" x2="65" y2="200"/><line x1="130" y1="0" x2="130" y2="200"/><line x1="195" y1="0" x2="195" y2="200"/>
       <line x1="0" y1="50" x2="260" y2="50"/><line x1="0" y1="100" x2="260" y2="100"/><line x1="0" y1="150" x2="260" y2="150"/>
     </g>
-    <path d="M 30 170 Q 130 40 230 170" fill="none" stroke="#d33" stroke-width="3"/>
-    <circle cx="30" cy="170" r="5" fill="#d33"/><circle cx="230" cy="170" r="5" fill="#d33"/>
-    <text x="130" y="225" text-anchor="middle" fill="#345">UV map: the geodesic bends</text>
-    <text x="130" y="244" text-anchor="middle" fill="#888" font-size="12">like a great-circle route on a flat map</text>
+    <path d="M 30 170 Q 130 40 230 170" fill="none" stroke="#f38ba8" stroke-width="3"/>
+    <circle cx="30" cy="170" r="5" fill="#f38ba8"/><circle cx="230" cy="170" r="5" fill="#f38ba8"/>
+    <text x="130" y="225" text-anchor="middle" fill="#a6adc8">UV map: the geodesic bends</text>
+    <text x="130" y="244" text-anchor="middle" fill="#6c7086" font-size="12">like a great-circle route on a flat map</text>
   </g>
-  <!-- arrow -->
-  <g stroke="#555" stroke-width="2" fill="#555">
+  <g stroke="#a6adc8" stroke-width="2" fill="#a6adc8">
     <line x1="330" y1="120" x2="388" y2="120"/>
     <polygon points="388,114 400,120 388,126"/>
   </g>
-  <!-- surface: intrinsically straight -->
   <g transform="translate(420,20)">
-    <polygon points="20,180 240,180 330,100 110,100" fill="#cfe3c8" stroke="#4a7a4a" stroke-width="2"/>
-    <path d="M 60 165 Q 165 90 280 160" fill="none" stroke="#d33" stroke-width="3"/>
-    <circle cx="60" cy="165" r="5" fill="#d33"/><circle cx="280" cy="160" r="5" fill="#d33"/>
-    <text x="175" y="225" text-anchor="middle" fill="#345">on the surface: as straight as possible</text>
-    <text x="175" y="244" text-anchor="middle" fill="#888" font-size="12">zero tangential acceleration, glued to the surface</text>
+    <polygon points="20,180 240,180 330,100 110,100" fill="#94e2d5" fill-opacity="0.15" stroke="#94e2d5" stroke-width="2"/>
+    <path d="M 60 165 Q 165 90 280 160" fill="none" stroke="#f38ba8" stroke-width="3"/>
+    <circle cx="60" cy="165" r="5" fill="#f38ba8"/><circle cx="280" cy="160" r="5" fill="#f38ba8"/>
+    <text x="175" y="225" text-anchor="middle" fill="#a6adc8">on the surface: as straight as possible</text>
+    <text x="175" y="244" text-anchor="middle" fill="#6c7086" font-size="12">zero tangential acceleration, glued to the surface</text>
   </g>
 </svg>

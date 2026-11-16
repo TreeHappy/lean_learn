@@ -1,21 +1,17 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 240" font-family="sans-serif" font-size="14">
-  <!-- true geodesic (grey) -->
-  <path d="M 60 190 Q 360 60 660 60" fill="none" stroke="#bbb" stroke-width="6" opacity="0.5"/>
-  <!-- euler polyline: starts on the curve, each segment uses the slope sampled
-       at its start, so it drifts above the (flattening) curve -->
+
+  <path d="M 60 190 Q 360 60 660 60" fill="none" stroke="#6c7086" stroke-width="6" opacity="0.45"/>
   <path d="M 90 177 L 200 132 L 310 96 L 420 68 L 530 49"
-        fill="none" stroke="#d33" stroke-width="3" stroke-dasharray="7 5"/>
-  <!-- "run straight" arrows along the first segments -->
-  <g stroke="#1a6bb5" stroke-width="2.5" fill="#1a6bb5">
+        fill="none" stroke="#f38ba8" stroke-width="3" stroke-dasharray="7 5"/>
+  <g stroke="#89b4fa" stroke-width="2.5" fill="#89b4fa">
     <line x1="90" y1="177" x2="148" y2="154"/><polygon points="150,152 139,162 135,152"/>
     <line x1="200" y1="132" x2="253" y2="114"/><polygon points="255,113 244,122 240,112"/>
     <line x1="310" y1="96" x2="363" y2="86"/><polygon points="365,85 353,93 349,83"/>
   </g>
-  <!-- euler points -->
-  <g fill="#d33">
+  <g fill="#f38ba8">
     <circle cx="90" cy="177" r="5"/><circle cx="200" cy="132" r="5"/>
     <circle cx="310" cy="96" r="5"/><circle cx="420" cy="68" r="5"/>
     <circle cx="530" cy="49" r="5"/>
   </g>
-  <text x="360" y="225" text-anchor="middle" fill="#345">eulerStep: sample the slope once, run straight — the dashed shot drifts off the true path (grey)</text>
+  <text x="360" y="225" text-anchor="middle" fill="#a6adc8">eulerStep: sample the slope once, run straight — the dashed shot drifts off the true path (grey)</text>
 </svg>
