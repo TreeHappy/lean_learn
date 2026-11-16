@@ -407,7 +407,7 @@ its proofs.
 |---|---|
 | `ShotState` | `struct { float2 pos; float2 vel; }` |
 | `field h s` | the `(v, a)` RHS of your physics step |
-| `geoAccel h p v` | the per-frame steering acceleration `-(G⁻¹ *ᵥ ((vᵀHv) • ∇h))` |
+| `geoAccel h p v` | the per-frame steering acceleration `-(G⁻¹ ((vᵀ H v) ∇h))` (Lean writes `*ᵥ` for the matrix product and `•` for scalar multiplication — see the notation table in §1) |
 | `StepMethod` | `typedef ShotState (*integrator)(heightmap, state, dt)` |
 | `eulerStep` / `rk4Step` | the two integrators; identical interface |
 | `shoot step h s₀ dt n` | `for (i = 0; i < n; i++) s = step(h, s, dt);` |
