@@ -32,6 +32,18 @@ engine concepts, with the exact Lean names:
 | mesh tangents (U and V edge directions) | `tangentX h p = (1, 0, ∂ₓh)`, `tangentY h p = (0, 1, ∂ᵧh)` | `DiffGeom.tangentX`, `tangentY` |
 | vertex normal | `normal h p = cross (tangentX h p) (tangentY h p)` | `DiffGeom.normal` |
 
+> [!NOTE]
+> **Definition (σ, the surface map).** Throughout this document we write
+>
+> ```text
+> σ := graph h,  i.e.  σ(p) = (p.1, p.2, h p.1 p.2),
+> ```
+>
+> for the parametrized surface `ℝ² → ℝ³` (`DiffGeom.graph`). A UV path
+> `γ : ℝ → ℝ²` then lifts to the 3D curve `σ ∘ γ` — the marble's actual
+> position on the mesh. The embedding map `σ` is the one whose derivatives
+> (`∂ₓσ = tangentX h p`, `∂ᵧσ = tangentY h p`) appear in every formula below.
+
 Some facts are already *proved* in `DifferentialGeometry.lean`, and they are
 the ones a shooter cares about:
 
@@ -127,7 +139,8 @@ no *turning* force, only the surface curving under your feet.
 ### From the rule to a formula, in four steps (all matrices)
 
 Let `γ(t) = (x(t), y(t))` be the UV path, `v = γ̇` its UV velocity, and
-`γ̈` its UV acceleration. Differentiating `graph h (γ(t))` twice gives the
+`γ̈` its UV acceleration. Differentiating the lifted curve `σ ∘ γ`, i.e.
+`graph h (γ(t))` (see the definition of `σ` in §1), twice gives the
 3D acceleration of the marble:
 
 ```text
