@@ -715,8 +715,12 @@ The three model surfaces: the plane, the paraboloid (bowl), and the saddle.
 Each comes with its partial derivatives of both orders, tangents, normal, and
 vector-calculus invariants. -/
 
-/-- A plane with slopes `a` and `b` and height `c` at the origin. -/
-def planeHeight (a b c : ℝ) (x y : ℝ) : ℝ :=
+/-- A plane with slopes `a` and `b` and height `c` at the origin.
+
+Polymorphic in the number type: the theory instantiates it at `ℝ`, and the
+figure generator (`lake exe gen-figures`) at `Float`, so both run the very
+same definition. -/
+def planeHeight {K : Type} [Mul K] [Add K] (a b c : K) (x y : K) : K :=
   a * x + b * y + c
 
 @[simp]
@@ -757,21 +761,29 @@ theorem partialYY_planeHeight (a b c x y : ℝ) :
   simp only [partialYY, partialY_planeHeight]
   rw [deriv_const]
 
-/-- The paraboloid `z = x² + y²`. -/
-def bowlHeight (x y : ℝ) : ℝ :=
-  x ^ 2 + y ^ 2
+/-- The paraboloid `z = x² + y²`.
+
+Polymorphic in the number type: the theory instantiates it at `ℝ`, and the
+figure generator (`lake exe gen-figures`) at `Float`, so both run the very
+same definition. -/
+def bowlHeight {K : Type} [Mul K] [Add K] (x y : K) : K :=
+  x * x + y * y
+
+/-- `deriv (· * ·) t = 2t`: the workhorse for the example heights
+(`fun t ↦ t * t` is not syntactically a product of two functions, so
+`deriv_mul` does not directly apply). -/
+private theorem deriv_sq (t : ℝ) : deriv (fun u : ℝ => u * u) t = 2 * t := by
+  simpa [two_mul] using ((hasDerivAt_id t).mul (hasDerivAt_id t)).deriv
 
 @[simp]
 theorem partialX_bowlHeight (x y : ℝ) : partialX bowlHeight x y = 2 * x := by
   simp only [partialX, bowlHeight]
-  rw [deriv_add_const, deriv_pow_field]
-  norm_num
+  rw [deriv_add_const, deriv_sq]
 
 @[simp]
 theorem partialY_bowlHeight (x y : ℝ) : partialY bowlHeight x y = 2 * y := by
   simp only [partialY, bowlHeight]
-  rw [deriv_const_add, deriv_pow_field]
-  norm_num
+  rw [deriv_const_add, deriv_sq]
 
 @[simp]
 theorem partialXX_bowlHeight (x y : ℝ) : partialXX bowlHeight x y = 2 := by
@@ -795,21 +807,23 @@ theorem partialYY_bowlHeight (x y : ℝ) : partialYY bowlHeight x y = 2 := by
   rw [deriv_const_mul_field, deriv_id'']
   simp
 
-/-- The saddle `z = x² - y²`. -/
-def saddleHeight (x y : ℝ) : ℝ :=
-  x ^ 2 - y ^ 2
+/-- The saddle `z = x² - y²`.
+
+Polymorphic in the number type: the theory instantiates it at `ℝ`, and the
+figure generator (`lake exe gen-figures`) at `Float`, so both run the very
+same definition. -/
+def saddleHeight {K : Type} [Mul K] [Add K] [Sub K] (x y : K) : K :=
+  x * x - y * y
 
 @[simp]
 theorem partialX_saddleHeight (x y : ℝ) : partialX saddleHeight x y = 2 * x := by
   simp only [partialX, saddleHeight]
-  rw [deriv_sub_const, deriv_pow_field]
-  norm_num
+  rw [deriv_sub_const, deriv_sq]
 
 @[simp]
 theorem partialY_saddleHeight (x y : ℝ) : partialY saddleHeight x y = -(2 * y) := by
   simp only [partialY, saddleHeight]
-  rw [deriv_const_sub, deriv_pow_field]
-  ring
+  rw [deriv_const_sub, deriv_sq]
 
 @[simp]
 theorem partialXX_saddleHeight (x y : ℝ) : partialXX saddleHeight x y = 2 := by

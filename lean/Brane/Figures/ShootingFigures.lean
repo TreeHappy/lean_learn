@@ -2,18 +2,19 @@
 Figures/ShootingFigures.lean: the nine figures referenced by
 `docs/shooting-method.md`, built with Vizagrams prims.
 
-Wherever a figure shows mathematics, the geometry is *computed* from the
-Float mirror in `Brane.Figures.Numeric` (hence ultimately from the same
-formulas as `Brane.DiffGeom` / `Brane.Shoot`):
+Wherever a figure shows mathematics, the geometry is *computed* by the very
+definitions documented in `docs/shooting-method.md`, instantiated at the
+computable number type `Float` (the `GeoKernel Float` instance of
+`Brane.Shoot`: central finite differences):
 
-  * `height-function`, `parameter-plane` — the example surfaces (`hBowlF`);
+  * `height-function`, `parameter-plane` — the example surface `bowlHeight`;
   * `heightmap-lift` — the graph map `(x, y) ↦ (x, y, h(x, y))`;
-  * `tangents`, `normal` — `tangentX` / `tangentY` / `normal` evaluated
-    numerically at a point of the bowl;
-  * `distorted-map`, `euler-drift` — real trajectories via `rk4StepF` and
-    `eulerStepF` (so Euler's drift is Euler's actual error, not an
+  * `tangents`, `normal` — the partials `partialX` / `partialY` of the
+    same kernel, evaluated at a point of the bowl;
+  * `distorted-map`, `euler-drift` — real trajectories via `Shoot.rk4Step`
+    and `Shoot.eulerStep` (so Euler's drift is Euler's actual error, not an
     illustration);
-  * `rk4-slopes` — the actual `rk4StepF` increments `k₁ … k₄`;
+  * `rk4-slopes` — the actual `rk4Step` slope probes `k₁ … k₄`;
   * `geodesic-rule` — the only purely schematic figure.
 
 Canvas convention: figures are authored in y-up math coordinates;
@@ -21,11 +22,14 @@ Canvas convention: figures are authored in y-up math coordinates;
 -/
 
 import Brane.Figures.Basic
-import Brane.Figures.Numeric
+import Brane.Shooting
 
 namespace Brane.Figures
 
-open GraphicalPrimitive Sty LinearAlgebra Numeric
+open GraphicalPrimitive Sty LinearAlgebra
+open Brane.DiffGeom (bowlHeight saddleHeight planeHeight)
+open Brane.Shoot (ShotState field eulerStep rk4Step shootPositions partialX partialY)
+open scoped Matrix
 
 /-! ## Palette (Catppuccin Latte, per the Catppuccin style guide) -/
 
@@ -93,12 +97,12 @@ def figHeightFunction : Array Prim :=
   let curve : Array Vec2 :=
     (List.range 89).toArray.map fun i =>
       let x := -2.2 + i.toFloat * (4.4 / 88)
-      ![sx x, sy (hBowlF x 0)]
+      ![sx x, sy (bowlHeight x 0)]
   -- vertical stems: the height h above each sampled point
   let stems : Array Prim :=
     (List.range 5).toArray.flatMap fun i =>
       let x := -2 + i.toFloat
-      if x == 0 then #[] else #[primLine ![sx x, 60] ![sx x, sy (hBowlF x 0)] blue 1.0]
+      if x == 0 then #[] else #[primLine ![sx x, 60] ![sx x, sy (bowlHeight x 0)] blue 1.0]
   #[
     primLine ![sx (-2.2), 60] ![sx 2.2, 60] overlay 1.5,
     primText ![sx 2.35, 55] "the plane (x, y)" overlay 12,
@@ -160,9 +164,9 @@ private def bowlMesh (proj : Float → Float → Float → Vec2) : Array Prim :=
       let x := -1.2 + i.toFloat * 0.6
       let y := -1.2 + j * 0.6
       #[primPolygon
-        #[proj x y (hBowlF x y), proj (x + 0.8) y (hBowlF (x + 0.8) y),
-          proj (x + 0.8) (y + 0.8) (hBowlF (x + 0.8) (y + 0.8)),
-          proj x (y + 0.8) (hBowlF x (y + 0.8))] blue blue 0.14 1.0]
+        #[proj x y (bowlHeight x y), proj (x + 0.8) y (bowlHeight (x + 0.8) y),
+          proj (x + 0.8) (y + 0.8) (bowlHeight (x + 0.8) (y + 0.8)),
+          proj x (y + 0.8) (bowlHeight x (y + 0.8))] blue blue 0.14 1.0]
 
 /-! ## 4. tangents: the derivatives of σ in the x- and y-directions -/
 
@@ -170,11 +174,11 @@ def figTangents : Array Prim :=
   let P : Float → Float → Float → Vec2 := fun x y z => ![400 + 55 * x + 20 * y, 190 - 20 * y - 21 * z]
   let px := 0.8
   let py := 0.6
-  let fx := partialXF hBowlF px py
-  let fy := partialYF hBowlF px py
-  let base := P px py (hBowlF px py)
-  let tx := P (px + 0.6) py (hBowlF px py + 0.6 * fx)
-  let ty := P px (py + 0.6) (hBowlF px py + 0.6 * fy)
+  let fx := partialX bowlHeight px py
+  let fy := partialY bowlHeight px py
+  let base := P px py (bowlHeight px py)
+  let tx := P (px + 0.6) py (bowlHeight px py + 0.6 * fx)
+  let ty := P px (py + 0.6) (bowlHeight px py + 0.6 * fy)
   let arrows := primArrow base tx blue 3 ++ primArrow base ty green 3
   bowlMesh P ++ arrows ++ #[
     primCircle base 5 peach,
@@ -190,15 +194,15 @@ def figNormal : Array Prim :=
   let P : Float → Float → Float → Vec2 := fun x y z => ![400 + 55 * x + 20 * y, 190 - 20 * y - 21 * z]
   let px := 0.8
   let py := 0.6
-  let fx := partialXF hBowlF px py
-  let fy := partialYF hBowlF px py
-  let base := P px py (hBowlF px py)
+  let fx := partialX bowlHeight px py
+  let fy := partialY bowlHeight px py
+  let base := P px py (bowlHeight px py)
   -- normal = (-∂ₓh, -∂ᵧh, 1), scaled 0.5 for display
   let nx : Float := px - 0.5 * fx
   let ny : Float := py - 0.5 * fy
-  let nrm := P nx ny (hBowlF px py + 0.5)
-  let tArr := primArrow (P (px + 0.6) py (hBowlF px py + 0.6 * fx)) base blue 2
-    ++ primArrow (P px (py + 0.6) (hBowlF px py + 0.6 * fy)) base green 2
+  let nrm := P nx ny (bowlHeight px py + 0.5)
+  let tArr := primArrow (P (px + 0.6) py (bowlHeight px py + 0.6 * fx)) base blue 2
+    ++ primArrow (P px (py + 0.6) (bowlHeight px py + 0.6 * fy)) base green 2
   let nArr := primArrow base nrm mauve 3
   bowlMesh P ++ tArr ++ nArr ++ #[
     primCircle base 5 peach,
@@ -229,11 +233,11 @@ def figGeodesicRule : Array Prim :=
   ]
 
 /-! ## 7. distorted-map: the geodesic bends in the plane
-     (computed: an rk4StepF trajectory on the bowl) -/
+     (computed: an rk4Step trajectory on the bowl) -/
 
 def figDistortedMap : Array Prim :=
-  let s₀ : StateF := ⟨0.4, 0.4, 1, 0.35⟩
-  let pts := (shootPositions rk4StepF hBowlF s₀ 0.05 90).map fun q =>
+  let s₀ : ShotState Float := ⟨(0.4, 0.4), ![1, 0.35]⟩
+  let pts := (shootPositions rk4Step bowlHeight s₀ 0.05 90).map fun q =>
     planeMap q.1 q.2
   let start := pts[0]!
   let stop := pts[pts.size - 1]!
@@ -244,17 +248,17 @@ def figDistortedMap : Array Prim :=
     primPolyline pts red 2.5,
     primCircle start 4.5 green,
     primCircle stop 4.5 red,
-    primText (planeMap 0.1 3.25) "geodesic in the parameter plane (computed via rk4StepF)" text 13,
+    primText (planeMap 0.1 3.25) "geodesic in the parameter plane (computed via rk4Step)" text 13,
     primText (planeMap 0.1 (-0.7)) "dashed: the straight chord — bending keeps the path straight on the surface" overlay 12
   ]
 
 /-! ## 8. euler-drift: Euler vs RK4 on the bowl (computed) -/
 
 def figEulerDrift : Array Prim :=
-  let s₀ : StateF := ⟨0.4, 0.4, 1, 0.35⟩
-  let rk4 := (shootPositions rk4StepF hBowlF s₀ 0.05 60).map fun q =>
+  let s₀ : ShotState Float := ⟨(0.4, 0.4), ![1, 0.35]⟩
+  let rk4 := (shootPositions rk4Step bowlHeight s₀ 0.05 60).map fun q =>
     planeMap q.1 q.2
-  let euler := (shootPositions eulerStepF hBowlF s₀ 0.25 60).map fun q =>
+  let euler := (shootPositions eulerStep bowlHeight s₀ 0.25 60).map fun q =>
     planeMap q.1 q.2
   #[
     primPolygon planeQuad blue blue 0.08 1.5,
@@ -268,17 +272,17 @@ def figEulerDrift : Array Prim :=
 /-! ## 9. rk4-slopes: the four slope probes, weighted 1:2:2:1 (computed) -/
 
 def figRk4Slopes : Array Prim :=
-  let s₀ : StateF := ⟨0.4, 0.4, 1, 0.35⟩
-  let s₁ := rk4StepF hBowlF s₀ 0.25
-  let s₂ := rk4StepF hBowlF s₁ 0.25
-  let s₃ := rk4StepF hBowlF s₂ 0.25
-  let s₄ := rk4StepF hBowlF s₃ 0.25
-  let pos (s : StateF) := planeMap s.x s.y
-  let path := (shootPositions rk4StepF hBowlF s₀ 0.25 4).map fun q =>
+  let s₀ : ShotState Float := ⟨(0.4, 0.4), ![1, 0.35]⟩
+  let s₁ := rk4Step bowlHeight s₀ 0.25
+  let s₂ := rk4Step bowlHeight s₁ 0.25
+  let s₃ := rk4Step bowlHeight s₂ 0.25
+  let s₄ := rk4Step bowlHeight s₃ 0.25
+  let pos (s : ShotState Float) := planeMap s.pos.1 s.pos.2
+  let path := (shootPositions rk4Step bowlHeight s₀ 0.25 4).map fun q =>
     planeMap q.1 q.2
   -- direction probes k₁ … k₄ (velocity part of each field evaluation)
-  let kvec (s : StateF) : Vec2 := ![s.vx, s.vy]
-  let probe (s : StateF) (hex : String) (w : Float) : Array Prim :=
+  let kvec (s : ShotState Float) : Vec2 := ![s.vel 0, s.vel 1]
+  let probe (s : ShotState Float) (hex : String) (w : Float) : Array Prim :=
     primArrow (pos s) (pos s + 30.0 • normalize (kvec s)) hex w
   let a₁ := probe s₀ yellow 2
   let a₂ := probe s₁ green 3.5
