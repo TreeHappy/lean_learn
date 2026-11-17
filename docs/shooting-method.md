@@ -287,6 +287,28 @@ full derivation; every symbol it uses is a `def` in `DifferentialGeometry.lean`.
 > which is exactly the third component of `d/dt (σ ∘ γ)` in Step 1 below. So:
 > `d/dt` is the slope operator along a path; `∇` bundles all partial slopes;
 > the chain rule `d/dt (h ∘ γ) = ∇h · γ̇` is the "adding partials" step.
+>
+> **Yes, Lean really can do this symbolically.** Mathlib's simplifier is
+> preloaded with all the one-variable derivative rules, so it just *computes*
+> derivatives of elementary expressions:
+>
+> ```lean
+> example (x : ℝ) :
+>     deriv (fun x ↦ cos (sin x) * exp x) x
+>       = (cos (sin x) - sin (sin x) * cos x) * exp x := by
+>   simp; ring
+> ```
+>
+> (with `fun_prop` discharging any `DifferentiableAt` side conditions). The
+> limitation is dimensionality: `deriv` is one-variable only. The
+> multivariable derivative `fderiv` returns a *linear map* rather than an
+> expression, and Mathlib deliberately does not simp on those — which is why
+> `DifferentialGeometry.lean` hand-unrolls the partials of `h` into
+> one-dimensional `deriv`s (`partialX h x y = deriv (fun t => h t y) x`, …)
+> instead of one big `fderiv` of `graph h`. The SciLean library fills that
+> gap with its `fun_trans` tactic, which does symbolically differentiate
+> multivariable expressions (`∂! (x : ℝ × ℝ), ‖x‖₂²` computes
+> `fun x dx => 2 * ⟪dx, x⟫`); this project keeps to plain Mathlib.
 
 ### Step 0: write everything in coordinates
 
