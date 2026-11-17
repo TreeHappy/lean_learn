@@ -30,21 +30,33 @@ defined explicitly, with the exact Lean names.
 > ```lean
 > def partialX (h : ℝ → ℝ → ℝ) (x y : ℝ) : ℝ := deriv (fun t => h t y) x
 > def partialY (h : ℝ → ℝ → ℝ) (x y : ℝ) : ℝ := deriv (fun t => h x t) y
+>
+> def partialXX (h : ℝ → ℝ → ℝ) (x y : ℝ) : ℝ := deriv (fun t => partialX h t y) x
+> def partialXY (h : ℝ → ℝ → ℝ) (x y : ℝ) : ℝ := deriv (fun t => partialX h x t) y
+> def partialYX (h : ℝ → ℝ → ℝ) (x y : ℝ) : ℝ := deriv (fun t => partialY h t y) x
+> def partialYY (h : ℝ → ℝ → ℝ) (x y : ℝ) : ℝ := deriv (fun t => partialY h x t) y
 > ```
 >
-> written `∂ₓh` and `∂ᵧh`, and the second partials `partialXX`, `partialXY`,
-> `partialYX`, `partialYY` (written `∂ₓₓh`, `∂ₓᵧh`, …) are defined the same
-> way (`DiffGeom.partialX`, …).
+> (`DiffGeom.partialX`, `DiffGeom.partialY`, `DiffGeom.partialXX`,
+> `DiffGeom.partialXY`, `DiffGeom.partialYX`, `DiffGeom.partialYY`).
+> In mathematical shorthand: `∂ₓh`, `∂ᵧh` for the first partials and
+> `∂ₓₓh, ∂ₓᵧh, ∂ᵧₓh, ∂ᵧᵧh` for the second partials.
 
 ![the height function h: a real number above every point of the plane](figures/height-function.svg)
 
 > [!NOTE]
 > **Definition (`ℝ²`, the parameter plane).** The **parameter plane** is the
 > domain of `h`: the plane `ℝ²`, whose points are pairs `p : ℝ × ℝ` with
-> coordinates `p.1 = x`, `p.2 = y`. All simulation happens here: the
-> marble's position and velocity are elements of this plane, and `h` is only
-> *evaluated* on it to produce 3D points. (Velocities in the plane are
-> `Vel2 = Fin 2 → ℝ`, see §1.1.)
+> coordinates `p.1 = x` (`Prod.fst`) and `p.2 = y` (`Prod.snd`). All
+> simulation happens here: the marble's position is a `p : ℝ × ℝ`, its
+> velocity is a vector in the plane
+>
+> ```lean
+> abbrev Vel2 : Type := Fin 2 → ℝ   -- DiffGeom.Vel2
+> ```
+>
+> and `h` is only *evaluated* on the plane to produce 3D points. (The
+> `Vel2`-as-function convention is spelled out in §1.1.)
 
 ![the parameter plane ℝ²: every point p = (x, y) is a pair of coordinates](figures/parameter-plane.svg)
 
@@ -68,7 +80,16 @@ defined explicitly, with the exact Lean names.
 > height is added. A path `γ : ℝ → ℝ²` in the plane then lifts to the 3D
 > curve `σ ∘ γ` — the marble's actual position on the surface. The embedding
 > map `σ` is the one whose derivatives (`∂ₓσ = tangentX h p`,
-> `∂ᵧσ = tangentY h p`) appear in every formula below.
+> `∂ᵧσ = tangentY h p`) appear in every formula below. Its defining
+> equations are `rfl`-transparent:
+>
+> ```lean
+> @[simp] theorem graph_fst (h) (p) : graph h p 0 = p.1 := rfl
+> @[simp] theorem graph_snd (h) (p) : graph h p 1 = p.2 := rfl
+> @[simp] theorem graph_height (h) (p) : graph h p 2 = h p.1 p.2 := rfl
+> ```
+>
+> (`DiffGeom.graph_fst`, `DiffGeom.graph_snd`, `DiffGeom.graph_height`.)
 
 ![the parameter plane lifted onto the surface](figures/heightmap-lift.svg)
 
@@ -86,7 +107,31 @@ defined explicitly, with the exact Lean names.
 >
 > (`DiffGeom.tangentX`, `DiffGeom.tangentY`). Together they span the
 > tangent plane: every velocity the marble can have on the surface is a
-> combination `v₀ · tangentX + v₁ · tangentY` of these two.
+> combination `v₀ · tangentX + v₁ · tangentY` of these two. Their
+> coordinates are `rfl`/`simp`-transparent:
+>
+> ```lean
+> @[simp] theorem tangentX_apply_zero (h) (p) : tangentX h p 0 = 1 := rfl
+> @[simp] theorem tangentX_apply_one  (h) (p) : tangentX h p 1 = 0 := rfl
+> @[simp] theorem tangentX_apply_two  (h) (p) :
+>     tangentX h p 2 = partialX h p.1 p.2 := rfl
+>
+> @[simp] theorem tangentY_apply_zero (h) (p) : tangentY h p 0 = 0 := rfl
+> @[simp] theorem tangentY_apply_one  (h) (p) : tangentY h p 1 = 1 := rfl
+> @[simp] theorem tangentY_apply_two  (h) (p) :
+>     tangentY h p 2 = partialY h p.1 p.2 := rfl
+>
+> @[simp] theorem norm_sq_tangentX (h) (p) :
+>     ‖tangentX h p‖ ^ 2 = 1 + partialX h p.1 p.2 ^ 2 := by
+>   rw [← real_inner_self_eq_norm_sq, inner_tangentX_tangentX]
+>
+> @[simp] theorem norm_sq_tangentY (h) (p) :
+>     ‖tangentY h p‖ ^ 2 = 1 + partialY h p.1 p.2 ^ 2 := by
+>   rw [← real_inner_self_eq_norm_sq, inner_tangentY_tangentY]
+> ```
+>
+> (`DiffGeom.tangentX_apply_*`, `DiffGeom.tangentY_apply_*`,
+> `DiffGeom.norm_sq_tangentX`, `DiffGeom.norm_sq_tangentY`.)
 
 ![the coordinate tangents: the derivatives of σ in the x- and y-directions](figures/tangents.svg)
 
@@ -103,27 +148,39 @@ defined explicitly, with the exact Lean names.
 > `normal h p = (-∂ₓh, -∂ᵧh, 1)` (proved in `normal_eq`), and by
 > construction it is orthogonal to both tangents — that orthogonality
 > (`tangentX_inner_normal`, `tangentY_inner_normal`) is what turns the
-> geodesic rule into a matrix equation in §2.
+> geodesic rule into a matrix equation in §2. The Lean facts about it:
+>
+> ```lean
+> theorem normal_eq (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) :
+>     normal h p = vec3 (-partialX h p.1 p.2) (-partialY h p.1 p.2) 1 := by
+>   rw [normal, tangentX, tangentY, cross_coordinates]
+>   simp
+>
+> theorem normal_ne_zero (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) : normal h p ≠ 0 := by
+>   rw [normal_eq]
+>   exact vec3_ne_zero_of_third _ _
+>
+> @[simp] theorem tangentX_inner_normal (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) :
+>     ⟪tangentX h p, normal h p⟫ = 0 := by
+>   rw [normal]
+>   exact inner_cross_left (tangentX h p) (tangentY h p)
+>
+> @[simp] theorem tangentY_inner_normal (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) :
+>     ⟪tangentY h p, normal h p⟫ = 0 := by
+>   rw [normal, real_inner_comm]
+>   exact inner_cross_right (tangentX h p) (tangentY h p)
+>
+> theorem norm_sq_normal (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) :
+>     ‖normal h p‖ ^ 2 =
+>       1 + partialX h p.1 p.2 ^ 2 + partialY h p.1 p.2 ^ 2 := by
+>   rw [← det_gramMatrix, det_gramMatrix_eq]
+> ```
+>
+> (`DiffGeom.normal_eq`, `DiffGeom.normal_ne_zero`,
+> `DiffGeom.tangentX_inner_normal`, `DiffGeom.tangentY_inner_normal`,
+> `DiffGeom.norm_sq_normal`.)
 
 ![the surface normal: orthogonal to both tangents, by construction](figures/normal.svg)
-
-Some facts are already *proved* in `DifferentialGeometry.lean`, and they are
-the ones we rely on:
-
-> [!NOTE]
-> **Lemma (DiffGeom.normal_ne_zero).**
-> The normal is never zero: `normal h p = (-∂ₓh, -∂ᵧh, 1)` has
-> z-component `1`.
-
-> [!NOTE]
-> **Lemma (DiffGeom.norm_sq_normal).**
-> `‖normal h p‖² = 1 + (∂ₓh)² + (∂ᵧh)²` — steeper slopes make the surface
-> lift larger areas of the plane, and this is the exact scale factor.
-
-> [!NOTE]
-> **Lemma (DiffGeom.norm_sq_tangentX).**
-> `‖tangentX h p‖² = 1 + (∂ₓh)²` — the x-direction tangent gets longer as
-> the slope in that direction grows.
 
 > [!IMPORTANT]
 > **Key point for everything that follows:** the whole simulation runs in
@@ -192,6 +249,13 @@ remainder of this document without further remark.
 > exactly along the surface normal. Nothing else. No gravity, no friction —
 > just "stay glued to the surface". A curve obeying this rule is called a
 > **geodesic**.
+>
+> In Lean the rule is not a separate `def`; it is *encoded*: the
+> orthogonality facts `tangentX_inner_normal` / `tangentY_inner_normal`
+> (§1, `normal` box) say what "no tangential part" means, and the
+> computable form of the rule is the acceleration `geoAccel h p v` below,
+> together with the (currently `sorry`ed) theorem
+> `geoAccel_solves_geodesic` stating that it satisfies the rule.
 
 Intuition: the path a stretched rubber band takes when pinned at both ends
 and pressed onto the surface; or the path you'd walk on the terrain feeling
@@ -219,7 +283,32 @@ where (all from `DifferentialGeometry.lean`):
   partial derivatives — the `jacobianTangentX` / `jacobianTangentY` matrices
   are exactly its rows padded into 3×2 form (`jacobianTangentX_apply`,
   `jacobianTangentY_apply`);
-- `e₃` is the vertical direction (the height axis of the plane).
+- `e₃` is the vertical direction (the height axis of the plane), i.e. the
+  Lean vector `vec3 0 0 1` (`DiffGeom.vec3`).
+
+These are the Lean definitions behind the letters:
+
+```lean
+/-- The Jacobian of the graph map `(x, y) ↦ (x, y, h x y)`.
+Its two columns are the coordinate tangents. -/
+def jacobian (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) : Mat32 :=
+  !![1, 0; 0, 1; partialX h p.1 p.2, partialY h p.1 p.2]
+
+/-- The Hessian of `h`: the `2×2` matrix of second partials. -/
+def hessian (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) : Mat22 :=
+  !![partialXX h p.1 p.2, partialXY h p.1 p.2;
+     partialYX h p.1 p.2, partialYY h p.1 p.2]
+
+/-- The Gram matrix of the two tangents, with entries given by the Mathlib
+inner product. -/
+def gramMatrix (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) : Mat22 :=
+  !![⟪tangentX h p, tangentX h p⟫, ⟪tangentX h p, tangentY h p⟫;
+     ⟪tangentY h p, tangentX h p⟫, ⟪tangentY h p, tangentY h p⟫]
+```
+
+(`DiffGeom.jacobian`, `DiffGeom.hessian`, `DiffGeom.gramMatrix`; the matrix
+shapes are `Mat32 = Matrix (Fin 3) (Fin 2) ℝ` and `Mat22 = Matrix (Fin 2)
+(Fin 2) ℝ`.)
 
 "Geodesic" means this 3D acceleration has **no tangential part** — it must be
 parallel to `normal h p`. The tangential part is found by dotting with the
@@ -331,7 +420,15 @@ full derivation; every symbol it uses is a `def` in `DifferentialGeometry.lean`.
 > slope `deriv f t` in Lean, i.e. the limit of `(f(t + ε) − f(t)) / ε`. We
 > abbreviate `d/dt f = ḟ` and `d²/dt² f = f̈`; so `γ̇ = d/dt γ` is the
 > velocity and `γ̈ = d²/dt² γ` the acceleration. The dots are shorthand —
-> Lean writes `deriv` / `iteratedDeriv`, never the dot.
+> Lean writes `deriv` / `iteratedDeriv`, never the dot. The Mathlib API:
+>
+> ```lean
+> -- `deriv f t` : the slope of `f : ℝ → ℝ` at `t`, i.e. the limit of
+> --   (f (t + ε) - f t) / ε  as ε → 0. Total function: the value is 0
+> --   at any point where f is not differentiable.
+> -- `deriv (fun t => h t y) x` : this is exactly `partialX h x y`.
+> -- Higher derivatives: nest it, e.g. deriv (deriv f) for f''.
+> ```
 >
 > Careful with the intuition "*`d/dt` is all partials added*": that is the
 > **gradient** `∇h = (∂ₓh, ∂ᵧh)` — a vector of all partial derivatives of a
