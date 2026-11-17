@@ -158,63 +158,123 @@ write("rk4-slopes.svg", `
   </g>`, 720, 260);
 
 /* ============================================================
-   6. surface-ingredients: plane point, lift, tangents, normal
+   6. per-definition figures: h, parameter plane, tangents, normal
    ============================================================ */
 {
-  // a gentle bump surface, drawn as a wireframe patch
   const h = (x, y) => 1.6 * Math.exp(-((x - 1.2) ** 2 + (y - 1.0) ** 2) / 1.2);
-  const P = (x, y, z) => [360 + 42 * x + 20 * y, 150 - 14 * y - 34 * z];
-  const px = 0.35, py = 0.25, pz = h(px, py);
-  // tangents at the point
-  const eps = 1e-4;
-  const hx = (h(px + eps, py) - h(px - eps, py)) / (2 * eps);
-  const hy = (h(px, py + eps) - h(px, py - eps)) / (2 * eps);
-  const arrow = (from, to, color, label, lx, ly, anchor) => {
+  const N = 4, M = 3;
+  const P = (x, y, z) => [370 + 42 * x + 20 * y, 150 - 14 * y - 34 * z];
+  const Q = (x, y) => [370 + 42 * x + 20 * y, 250 - 14 * y];
+  const pt = (a) => a.map((p) => p.map((v) => v.toFixed(1)).join(",")).join(" ");
+  const plane = () =>
+    `<polygon points="${pt([Q(0,0), Q(N,0), Q(N,M), Q(0,M)])}" fill="none"
+      stroke="${C.overlay}" stroke-width="1.2" stroke-dasharray="4 4" opacity="0.6"/>\n`;
+  const mesh = (op) => {
+    let m = "";
+    for (let j = M - 1; j >= 0; j--)
+      for (let i = 0; i < N; i++) {
+        const quad = [P(i, j + 1, h(i, j + 1)), P(i + 1, j + 1, h(i + 1, j + 1)),
+                      P(i + 1, j, h(i + 1, j)), P(i, j, h(i, j))];
+        m += `<polygon points="${pt(quad)}" fill="${C.blue}" fill-opacity="0.12"
+          stroke="${C.blue}" stroke-width="1" stroke-opacity="${op}"/>\n`;
+      }
+    return m;
+  };
+  const arrow = (from, to, color, width = 3) => {
     const dx = to[0] - from[0], dy = to[1] - from[1];
     const L = Math.hypot(dx, dy), ux = dx / L, uy = dy / L;
-    const tipx = from[0] + dx + 9 * ux, tipy = from[1] + dy + 9 * uy;
-    return `<g stroke="${color}" stroke-width="3" fill="${color}">
-      <line x1="${from[0]}" y1="${from[1]}" x2="${to[0]}" y2="${to[1]}"/>
-      <polygon points="${tipx.toFixed(1)},${tipy.toFixed(1)} ${(to[0] + 4.5 * uy).toFixed(1)},${(to[1] - 4.5 * ux).toFixed(1)} ${(to[0] - 4.5 * uy).toFixed(1)},${(to[1] + 4.5 * ux).toFixed(1)}"/>
-    </g>
-    <text x="${lx}" y="${ly}" fill="${color}" text-anchor="${anchor}">${label}</text>\n`;
+    return `<g stroke="${color}" stroke-width="${width}" fill="${color}">
+      <line x1="${from[0].toFixed(1)}" y1="${from[1].toFixed(1)}" x2="${to[0].toFixed(1)}" y2="${to[1].toFixed(1)}"/>
+      <polygon points="${(from[0]+dx+9*ux).toFixed(1)},${(from[1]+dy+9*uy).toFixed(1)} ${(to[0]+4.5*uy).toFixed(1)},${(to[1]-4.5*ux).toFixed(1)} ${(to[0]-4.5*uy).toFixed(1)},${(to[1]+4.5*ux).toFixed(1)}"/>
+    </g>\n`;
   };
-  const [bx, by] = P(px, py, 0), [sx, sy] = P(px, py, pz);
-  let s = "";
-  // wireframe patch, quads back-to-front
-  const N = 4, M = 3;
-  for (let j = M - 1; j >= 0; j--) {
-    for (let i = 0; i < N; i++) {
-      const quad = [P(i, j + 1, h(i, j + 1)), P(i + 1, j + 1, h(i + 1, j + 1)),
-                    P(i + 1, j, h(i + 1, j)), P(i, j, h(i, j))];
-      s += `<polygon points="${quad.map((p) => p.map((v) => v.toFixed(1)).join(",")).join(" ")}"
-        fill="${C.blue}" fill-opacity="0.12" stroke="${C.blue}" stroke-width="1" stroke-opacity="0.8"/>\n`;
-    }
+  const cap = (t, sub) => `<text x="360" y="308" text-anchor="middle" fill="${C.subtext}">${t}</text>\n` +
+    (sub ? `<text x="360" y="326" text-anchor="middle" fill="${C.overlay}" font-size="12">${sub}</text>\n` : "");
+
+  /* --- 6a. height-function: heights as stems above the plane --- */
+  {
+    let s = plane() + mesh(0.4);
+    for (let j = M - 1; j >= 0; j--)
+      for (let i = 0; i < N; i++) {
+        const [bx, by] = Q(i, j), [tx, ty] = P(i, j, h(i, j));
+        s += `<line x1="${bx}" y1="${by}" x2="${tx}" y2="${ty}" stroke="${C.yellow}" stroke-width="1.1" stroke-dasharray="2 3" opacity="0.55"/>\n`;
+        s += `<circle cx="${tx}" cy="${ty}" r="2.6" fill="${C.yellow}" opacity="0.85"/>\n`;
+      }
+    const [ax, ay] = Q(2, 1), [ax2, ay2] = P(2, 1, h(2, 1));
+    s += `<line x1="${ax}" y1="${ay}" x2="${ax2}" y2="${ay2}" stroke="${C.peach}" stroke-width="2.4" opacity="0.95"/>\n`;
+    s += `<circle cx="${ax}" cy="${ay}" r="3.6" fill="${C.peach}"/>\n`;
+    s += `<circle cx="${ax2}" cy="${ay2}" r="4" fill="${C.peach}"/>\n`;
+    s += `<text x="${ax2 + 10}" y="${ay2 - 8}" fill="${C.peach}">h(x, y)</text>\n`;
+    s += cap("the height function h: a real number above every point of the plane",
+             "the stem is the height h(x,y); the tops of all stems make the surface");
+    write("height-function.svg", s, 720, 336);
   }
-  // plane patch underneath
-  const Q = (x, y) => [360 + 42 * x + 20 * y, 250 - 14 * y];
-  const corners = [Q(0, 0), Q(N, 0), Q(N, M), Q(0, M)]
-    .map((p) => p.join(",")).join(" ");
-  s += `<polygon points="${corners}" fill="none" stroke="${C.overlay}" stroke-width="1.2" stroke-dasharray="4 4" opacity="0.6"/>\n`;
-  s += `<circle cx="${bx.toFixed(1)}" cy="${by.toFixed(1)}" r="4" fill="${C.peach}"/>\n`;
-  s += `<text x="${(bx + 10).toFixed(1)}" y="${(by + 18).toFixed(1)}" fill="${C.peach}">p = (x, y) in the parameter plane</text>\n`;
-  // lift stem
-  s += `<line x1="${bx.toFixed(1)}" y1="${by.toFixed(1)}" x2="${sx.toFixed(1)}" y2="${sy.toFixed(1)}" stroke="${C.peach}" stroke-width="1.3" stroke-dasharray="3 3" opacity="0.8"/>\n`;
-  s += `<circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="5.5" fill="${C.peach}"/>\n`;
-  s += `<text x="${(sx - 150).toFixed(1)}" y="${(sy + 42).toFixed(1)}" fill="${C.peach}">σ(p) = (x, y, h(x,y))</text>\n`;
-  // tangents and normal
-  const T = (a) => P(px + a, py, pz + a * hx);
-  const S = (b) => P(px, py + b, pz + b * hy);
-  const tX = T(0.85), tY = S(0.85);
-  // unit normal (−hx, −hy, 1), scaled
-  const nL = Math.hypot(hx, hy, 1);
-  const nz = [(-hx / nL) * 0.75, (-hy / nL) * 0.75, (1 / nL) * 0.75];
-  const nrm = P(px + nz[0], py + nz[1], pz + nz[2]);
-  s += arrow([sx, sy], tX, C.sky, "tangentX = (1, 0, ∂ₓh)", tX[0] + 12, tX[1] + 4, "start");
-  s += arrow([sx, sy], tY, C.green, "tangentY = (0, 1, ∂ᵧh)", tY[0] - 12, tY[1] - 12, "end");
-  s += arrow([sx, sy], nrm, C.mauve, "normal = cross(tangentX, tangentY) = (−∂ₓh, −∂ᵧh, 1)", 40, 52, "start");
-  s += `<text x="360" y="312" text-anchor="middle" fill="${C.subtext}">the ingredients at a point: the lift σ(p), the two coordinate tangents, and the normal they span</text>\n`;
-  write("surface-ingredients.svg", s, 720, 325);
+
+  /* --- 6b. parameter-plane: where the simulation lives --- */
+  {
+    let s = `<polygon points="${pt([Q(0,0), Q(N,0), Q(N,M), Q(0,M)])}" fill="${C.blue}" fill-opacity="0.10" stroke="${C.blue}" stroke-width="2"/>\n`;
+    let grid = "";
+    for (let i = 1; i < N; i++) grid += `<line x1="${Q(i,0)[0]}" y1="${Q(i,0)[1]}" x2="${Q(i,M)[0]}" y2="${Q(i,M)[1]}"/>`;
+    for (let j = 1; j < M; j++) grid += `<line x1="${Q(0,j)[0]}" y1="${Q(0,j)[1]}" x2="${Q(N,j)[0]}" y2="${Q(N,j)[1]}"/>`;
+    s += `<g stroke="${C.overlay}" stroke-width="0.8" opacity="0.55">${grid}</g>\n`;
+    s += arrow(Q(0, 0), Q(1, 0), C.subtext, 2) + arrow(Q(0, 0), Q(0, 1), C.subtext, 2);
+    s += `<text x="${Q(1, 0)[0]}" y="${Q(1, 0)[1] + 20}" fill="${C.subtext}">x</text>\n`;
+    s += `<text x="${Q(0, 1)[0] - 16}" y="${Q(0, 1)[1] + 4}" fill="${C.subtext}">y</text>\n`;
+    const [px_, py_] = Q(2, 1);
+    s += `<circle cx="${px_}" cy="${py_}" r="5" fill="${C.peach}"/>\n`;
+    s += `<text x="${px_ + 10}" y="${py_ + 18}" fill="${C.peach}">p = (x, y)</text>\n`;
+    s += cap("the parameter plane ℝ²: every point p = (x, y) is a pair of coordinates",
+             "the marble's position and velocity live here; h is only evaluated on it");
+    write("parameter-plane.svg", s, 720, 336);
+  }
+
+  /* --- 6c. tangents: the two edge directions at a point --- */
+  {
+    const px = 0.35, py = 0.25, pz = h(px, py);
+    const eps = 1e-4;
+    const hx = (h(px + eps, py) - h(px - eps, py)) / (2 * eps);
+    const hy = (h(px, py + eps) - h(px, py - eps)) / (2 * eps);
+    const T = (a) => P(px + a, py, pz + a * hx);
+    const S = (b) => P(px, py + b, pz + b * hy);
+    const [bx, by] = P(px, py, 0), [sx, sy] = P(px, py, pz);
+    let s = plane() + mesh(0.5);
+    s += `<line x1="${bx.toFixed(1)}" y1="${by.toFixed(1)}" x2="${sx.toFixed(1)}" y2="${sy.toFixed(1)}" stroke="${C.peach}" stroke-width="1.3" stroke-dasharray="3 3" opacity="0.8"/>\n`;
+    s += `<circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="5.5" fill="${C.peach}"/>\n`;
+    s += `<text x="${(sx - 150).toFixed(1)}" y="${(sy + 46).toFixed(1)}" fill="${C.peach}">σ(p) = (x, y, h(x,y))</text>\n`;
+    s += arrow([sx, sy], T(0.85), C.sky) +
+      `<text x="${T(0.85)[0] + 12}" y="${T(0.85)[1] + 4}" fill="${C.sky}">tangentX = (1, 0, ∂ₓh)</text>\n`;
+    s += arrow([sx, sy], S(0.85), C.green) +
+      `<text x="${S(0.85)[0] - 12}" y="${S(0.85)[1] - 12}" fill="${C.green}" text-anchor="end">tangentY = (0, 1, ∂ᵧh)</text>\n`;
+    s += cap("the coordinate tangents: the derivatives of σ in the x- and y-directions",
+             "every surface velocity is a combination v₀ · tangentX + v₁ · tangentY");
+    write("tangents.svg", s, 720, 336);
+  }
+
+  /* --- 6d. normal: the cross product of the tangents --- */
+  {
+    const px = 0.35, py = 0.25, pz = h(px, py);
+    const eps = 1e-4;
+    const hx = (h(px + eps, py) - h(px - eps, py)) / (2 * eps);
+    const hy = (h(px, py + eps) - h(px, py - eps)) / (2 * eps);
+    const T = (a) => P(px + a, py, pz + a * hx);
+    const S = (b) => P(px, py + b, pz + b * hy);
+    const [bx, by] = P(px, py, 0), [sx, sy] = P(px, py, pz);
+    let s = plane() + mesh(0.5);
+    s += `<line x1="${bx.toFixed(1)}" y1="${by.toFixed(1)}" x2="${sx.toFixed(1)}" y2="${sy.toFixed(1)}" stroke="${C.peach}" stroke-width="1.3" stroke-dasharray="3 3" opacity="0.8"/>\n`;
+    s += `<circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="5.5" fill="${C.peach}"/>\n`;
+    // faded tangents, then the normal
+    s += arrow([sx, sy], T(0.6), C.sky, 1.6).replace('stroke-width="1.6"', 'stroke-width="1.6" opacity="0.45"');
+    s += arrow([sx, sy], S(0.6), C.green, 1.6).replace('stroke-width="1.6"', 'stroke-width="1.6" opacity="0.45"');
+    const nL = Math.hypot(hx, hy, 1);
+    const nz = [(-hx / nL) * 0.85, (-hy / nL) * 0.85, (1 / nL) * 0.85];
+    const nrm = P(px + nz[0], py + nz[1], pz + nz[2]);
+    s += arrow([sx, sy], nrm, C.mauve);
+    s += `<text x="40" y="52" fill="${C.mauve}">normal = cross(tangentX, tangentY) = (−∂ₓh, −∂ᵧh, 1)</text>\n`;
+    s += `<text x="42" y="70" fill="${C.overlay}" font-size="12">sticking straight out of the surface</text>\n`;
+    s += cap("the surface normal: orthogonal to both tangents, by construction",
+             "the geodesic rule says the acceleration may only point this way");
+    write("normal.svg", s, 720, 336);
+  }
 }
 
 console.log("figures regenerated");

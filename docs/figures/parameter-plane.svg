@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 336" font-family="sans-serif" font-size="14">
+<polygon points="370.0,250.0 538.0,250.0 598.0,208.0 430.0,208.0" fill="#89b4fa" fill-opacity="0.10" stroke="#89b4fa" stroke-width="2"/>
+<g stroke="#6c7086" stroke-width="0.8" opacity="0.55"><line x1="412" y1="250" x2="472" y2="208"/><line x1="454" y1="250" x2="514" y2="208"/><line x1="496" y1="250" x2="556" y2="208"/><line x1="390" y1="236" x2="558" y2="236"/><line x1="410" y1="222" x2="578" y2="222"/></g>
+<g stroke="#a6adc8" stroke-width="2" fill="#a6adc8">
+      <line x1="370.0" y1="250.0" x2="412.0" y2="250.0"/>
+      <polygon points="421.0,250.0 412.0,245.5 412.0,254.5"/>
+    </g>
+<g stroke="#a6adc8" stroke-width="2" fill="#a6adc8">
+      <line x1="370.0" y1="250.0" x2="390.0" y2="236.0"/>
+      <polygon points="397.4,230.8 387.4,232.3 392.6,239.7"/>
+    </g>
+<text x="412" y="270" fill="#a6adc8">x</text>
+<text x="374" y="240" fill="#a6adc8">y</text>
+<circle cx="474" cy="236" r="5" fill="#fab387"/>
+<text x="484" y="254" fill="#fab387">p = (x, y)</text>
+<text x="360" y="308" text-anchor="middle" fill="#a6adc8">the parameter plane ℝ²: every point p = (x, y) is a pair of coordinates</text>
+<text x="360" y="326" text-anchor="middle" fill="#6c7086" font-size="12">the marble's position and velocity live here; h is only evaluated on it</text>
+
+</svg>
