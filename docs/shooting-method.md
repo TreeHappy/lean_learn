@@ -264,6 +264,30 @@ The equation `(σ ∘ γ)'' = J γ̈ + (vᵀ H v) · e₃` is not an assumption 
 what falls out of the chain rule applied twice to `σ = graph h`. Here is the
 full derivation; every symbol it uses is a `def` in `DifferentialGeometry.lean`.
 
+> [!NOTE]
+> **Definition (`d/dt`, the time derivative).** `d/dt` is the ordinary
+> *single-variable* derivative: for a function `f : ℝ → ℝ` (or applied
+> componentwise to a vector-valued path like `σ ∘ γ : ℝ → ℝ³`), it is the
+> slope `deriv f t` in Lean, i.e. the limit of `(f(t + ε) − f(t)) / ε`. We
+> abbreviate `d/dt f = ḟ` and `d²/dt² f = f̈`; so `γ̇ = d/dt γ` is the UV
+> velocity and `γ̈ = d²/dt² γ` the UV acceleration. The dots are shorthand —
+> Lean writes `deriv` / `iteratedDeriv`, never the dot.
+>
+> Careful with the intuition "*`d/dt` is all partials added*": that is the
+> **gradient** `∇h = (∂ₓh, ∂ᵧh)` — a vector of all partial derivatives of a
+> function of *two* variables (Lean: `gradientVec h p`). They meet through
+> the **chain rule**: when you differentiate `h(γ(t))`, a function of *one*
+> variable `t` built from a function of two variables, the result is the sum
+> of partials *weighted by the velocity components*,
+>
+> ```text
+> d/dt h(γ(t)) = ∂ₓh · γ̇₁ + ∂ᵧh · γ̇₂ = ∇h · γ̇,
+> ```
+>
+> which is exactly the third component of `d/dt (σ ∘ γ)` in Step 1 below. So:
+> `d/dt` is the slope operator along a path; `∇` bundles all partial slopes;
+> the chain rule `d/dt (h ∘ γ) = ∇h · γ̇` is the "adding partials" step.
+
 ### Step 0: write everything in coordinates
 
 The lift of the UV path is
