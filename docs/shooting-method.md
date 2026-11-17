@@ -42,9 +42,23 @@ defined explicitly, with the exact Lean names.
 > ```
 >
 > (`DiffGeom.planeHeight`, `DiffGeom.bowlHeight`, `DiffGeom.saddleHeight`
-> are the worked examples proved in `DifferentialGeometry.lean`.)
+> are the worked examples proved in `DifferentialGeometry.lean`):
 >
-> What Lean *does* define are the derivatives of `h`, as one-variable
+> ```lean
+> /-- A plane with slopes `a` and `b` and height `c` at the origin. -/
+> def planeHeight (a b c : ℝ) (x y : ℝ) : ℝ :=
+>   a * x + b * y + c
+>
+> /-- The paraboloid `z = x² + y²`. -/
+> def bowlHeight (x y : ℝ) : ℝ :=
+>   x ^ 2 + y ^ 2
+>
+> /-- The saddle `z = x² - y²`. -/
+> def saddleHeight (x y : ℝ) : ℝ :=
+>   x ^ 2 - y ^ 2
+> ```
+>
+> What Lean *does* define for every `h` are the derivatives, as one-variable
 > derivatives:
 >
 > ```lean
