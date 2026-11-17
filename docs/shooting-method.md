@@ -24,8 +24,25 @@ defined explicitly, with the exact Lean names.
 > [!NOTE]
 > **Definition (`h`, the height function).** The **height function** is
 > `h : ℝ → ℝ → ℝ`; it assigns to each point `(x, y)` of the plane a real
-> number: the height of the surface above it. Its partial derivatives are
-> the one-variable derivatives
+> number: the height of the surface above it. There is no `def` for `h`
+> itself — it is the abstract input of the whole theory, a free variable of
+> type `ℝ → ℝ → ℝ` that every other definition takes as its first argument:
+>
+> ```lean
+> -- the type of the height function: two coordinates in, one height out
+> --   h : ℝ → ℝ → ℝ    i.e.    h x y = height above (x, y)
+> -- there is no `def h`; it is the abstract parameter, e.g.
+> --   graph h,  tangentX h,  normal h,  hessian h,  geoAccel h ...
+> -- and concrete instances are supplied where needed, such as
+> --   planeHeight a b c = fun x y => a * x + b * y + c
+> --   bowlHeight        = fun x y => x ^ 2 + y ^ 2
+> ```
+>
+> (`DiffGeom.planeHeight`, `DiffGeom.bowlHeight`, `DiffGeom.saddleHeight`
+> are the worked examples proved in `DifferentialGeometry.lean`.)
+>
+> What Lean *does* define are the derivatives of `h`, as one-variable
+> derivatives:
 >
 > ```lean
 > def partialX (h : ℝ → ℝ → ℝ) (x y : ℝ) : ℝ := deriv (fun t => h t y) x
