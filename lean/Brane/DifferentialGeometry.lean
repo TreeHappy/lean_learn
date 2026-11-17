@@ -142,23 +142,23 @@ def graph (h : HeightFun) (p : Point2) : Point3 :=
 
 /-- The first partial derivative of `h` with respect to its first argument:
 `∂h/∂x (x, y) = deriv (fun t => h t y) x`. -/
-def partialX (h : ℝ → ℝ → ℝ) (x y : ℝ) : ℝ := deriv (fun t => h t y) x
+def partialX (h : HeightFun) (x y : ℝ) : ℝ := deriv (fun t => h t y) x
 
 /-- The first partial derivative of `h` with respect to its second argument:
 `∂h/∂y (x, y) = deriv (fun t => h x t) y`. -/
-def partialY (h : ℝ → ℝ → ℝ) (x y : ℝ) : ℝ := deriv (fun t => h x t) y
+def partialY (h : HeightFun) (x y : ℝ) : ℝ := deriv (fun t => h x t) y
 
 /-- The second partial `∂²h/∂x²`. -/
-def partialXX (h : ℝ → ℝ → ℝ) (x y : ℝ) : ℝ := deriv (fun t => partialX h t y) x
+def partialXX (h : HeightFun) (x y : ℝ) : ℝ := deriv (fun t => partialX h t y) x
 
 /-- The mixed second partial `∂²h/∂y∂x`: the `y`-derivative of `∂h/∂x`. -/
-def partialXY (h : ℝ → ℝ → ℝ) (x y : ℝ) : ℝ := deriv (fun t => partialX h x t) y
+def partialXY (h : HeightFun) (x y : ℝ) : ℝ := deriv (fun t => partialX h x t) y
 
 /-- The mixed second partial `∂²h/∂x∂y`: the `x`-derivative of `∂h/∂y`. -/
-def partialYX (h : ℝ → ℝ → ℝ) (x y : ℝ) : ℝ := deriv (fun t => partialY h t y) x
+def partialYX (h : HeightFun) (x y : ℝ) : ℝ := deriv (fun t => partialY h t y) x
 
 /-- The second partial `∂²h/∂y²`. -/
-def partialYY (h : ℝ → ℝ → ℝ) (x y : ℝ) : ℝ := deriv (fun t => partialY h x t) y
+def partialYY (h : HeightFun) (x y : ℝ) : ℝ := deriv (fun t => partialY h x t) y
 
 /-- The tangent vector in the `x`-direction:
 the derivative of `x ↦ (x, y, h x y)` at `x`. -/
@@ -187,58 +187,58 @@ def normal (h : HeightFun) (p : Point2) : Normal :=
   cross (tangentX h p) (tangentY h p)
 
 /-- The tangent space at a point, spanned by the coordinate tangents. -/
-def tangentSpace (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) : Submodule ℝ Vec3 :=
+def tangentSpace (h : HeightFun) (p : Point2) : Submodule ℝ Vec3 :=
   Submodule.span ℝ ({tangentX h p, tangentY h p} : Set Vec3)
 
 /-- A point lies in the tangent plane when the difference to the surface point
 is in the tangent space. -/
-def tangentPlane (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) : Set Vec3 :=
+def tangentPlane (h : HeightFun) (p : Point2) : Set Vec3 :=
   {q | q - graph h p ∈ tangentSpace h p}
 
 /-- The Jacobian of the graph map `(x, y) ↦ (x, y, h x y)`.
 Its two columns are the coordinate tangents. -/
-def jacobian (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) : Mat32 :=
+def jacobian (h : HeightFun) (p : Point2) : Mat32 :=
   !![1, 0; 0, 1; partialX h p.1 p.2, partialY h p.1 p.2]
 
 /-- The Jacobian of the `x`-tangent: its columns are the derivatives of
 `tangentX` in the `x`- and `y`-directions (`tangentXX`, `tangentXY`). -/
-def jacobianTangentX (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) : Mat32 :=
+def jacobianTangentX (h : HeightFun) (p : Point2) : Mat32 :=
   !![0, 0; 0, 0; partialXX h p.1 p.2, partialXY h p.1 p.2]
 
 /-- The Jacobian of the `y`-tangent: its columns are the derivatives of
 `tangentY` in the `x`- and `y`-directions (`tangentYX`, `tangentYY`). -/
-def jacobianTangentY (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) : Mat32 :=
+def jacobianTangentY (h : HeightFun) (p : Point2) : Mat32 :=
   !![0, 0; 0, 0; partialYX h p.1 p.2, partialYY h p.1 p.2]
 
 /-- The Hessian of `h`: the `2×2` matrix of second partials. -/
-def hessian (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) : Mat22 :=
+def hessian (h : HeightFun) (p : Point2) : Mat22 :=
   !![partialXX h p.1 p.2, partialXY h p.1 p.2;
      partialYX h p.1 p.2, partialYY h p.1 p.2]
 
 /-- The Gram matrix of the two tangents, with entries given by the Mathlib
 inner product. -/
-def gramMatrix (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) : Mat22 :=
+def gramMatrix (h : HeightFun) (p : Point2) : Mat22 :=
   !![⟪tangentX h p, tangentX h p⟫, ⟪tangentX h p, tangentY h p⟫;
      ⟪tangentY h p, tangentX h p⟫, ⟪tangentY h p, tangentY h p⟫]
 
 /-- The gradient of `h`, as a horizontal vector in `ℝ³`:
 `(∂h/∂x, ∂h/∂y, 0)`. -/
-def gradient (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) : Vec3 :=
+def gradient (h : HeightFun) (p : Point2) : Vec3 :=
   vec3 (partialX h p.1 p.2) (partialY h p.1 p.2) 0
 
 /-- The directional derivative of `h` along a vector `v`:
 the inner product of the gradient with `v`. -/
-def directionalDerivative (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) (v : Vec3) : ℝ :=
+def directionalDerivative (h : HeightFun) (p : Point2) (v : Vec3) : ℝ :=
   ⟪gradient h p, v⟫
 
 /-- The divergence of the gradient field of `h`, i.e. the Laplacian:
 `∂²h/∂x² + ∂²h/∂y²`. -/
-def divergence (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) : ℝ :=
+def divergence (h : HeightFun) (p : Point2) : ℝ :=
   partialXX h p.1 p.2 + partialYY h p.1 p.2
 
 /-- The (scalar) curl of the gradient field of `h`:
 the mixed-partial difference `∂²h/∂x∂y - ∂²h/∂y∂x`. -/
-def curl (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) : ℝ :=
+def curl (h : HeightFun) (p : Point2) : ℝ :=
   partialYX h p.1 p.2 - partialXY h p.1 p.2
 
 /-- The unit normal vector. -/
@@ -259,48 +259,48 @@ theorem vec3_apply_one (a b c : ℝ) : vec3 a b c 1 = b := rfl
 theorem vec3_apply_two (a b c : ℝ) : vec3 a b c 2 = c := rfl
 
 @[simp]
-theorem graph_fst (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) : graph h p 0 = p.1 := rfl
+theorem graph_fst (h : HeightFun) (p : Point2) : graph h p 0 = p.1 := rfl
 
 @[simp]
-theorem graph_snd (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) : graph h p 1 = p.2 := rfl
+theorem graph_snd (h : HeightFun) (p : Point2) : graph h p 1 = p.2 := rfl
 
 @[simp]
-theorem graph_height (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) : graph h p 2 = h p.1 p.2 := rfl
+theorem graph_height (h : HeightFun) (p : Point2) : graph h p 2 = h p.1 p.2 := rfl
 
 @[simp]
-theorem tangentX_apply_zero (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) : tangentX h p 0 = 1 := rfl
+theorem tangentX_apply_zero (h : HeightFun) (p : Point2) : tangentX h p 0 = 1 := rfl
 
 @[simp]
-theorem tangentX_apply_one (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) : tangentX h p 1 = 0 := rfl
+theorem tangentX_apply_one (h : HeightFun) (p : Point2) : tangentX h p 1 = 0 := rfl
 
 @[simp]
-theorem tangentX_apply_two (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) :
+theorem tangentX_apply_two (h : HeightFun) (p : Point2) :
     tangentX h p 2 = partialX h p.1 p.2 := rfl
 
 @[simp]
-theorem tangentY_apply_zero (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) : tangentY h p 0 = 0 := rfl
+theorem tangentY_apply_zero (h : HeightFun) (p : Point2) : tangentY h p 0 = 0 := rfl
 
 @[simp]
-theorem tangentY_apply_one (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) : tangentY h p 1 = 1 := rfl
+theorem tangentY_apply_one (h : HeightFun) (p : Point2) : tangentY h p 1 = 1 := rfl
 
 @[simp]
-theorem tangentY_apply_two (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) :
+theorem tangentY_apply_two (h : HeightFun) (p : Point2) :
     tangentY h p 2 = partialY h p.1 p.2 := rfl
 
 @[simp]
-theorem tangentXX_apply_two (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) :
+theorem tangentXX_apply_two (h : HeightFun) (p : Point2) :
     tangentXX h p 2 = partialXX h p.1 p.2 := rfl
 
 @[simp]
-theorem tangentXY_apply_two (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) :
+theorem tangentXY_apply_two (h : HeightFun) (p : Point2) :
     tangentXY h p 2 = partialXY h p.1 p.2 := rfl
 
 @[simp]
-theorem tangentYX_apply_two (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) :
+theorem tangentYX_apply_two (h : HeightFun) (p : Point2) :
     tangentYX h p 2 = partialYX h p.1 p.2 := rfl
 
 @[simp]
-theorem tangentYY_apply_two (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) :
+theorem tangentYY_apply_two (h : HeightFun) (p : Point2) :
     tangentYY h p 2 = partialYY h p.1 p.2 := rfl
 
 /-! ## Proofs
@@ -398,7 +398,7 @@ theorem inner_cross_self (u v : Vec3) :
 /-! ### The normal vector -/
 
 /-- The normal vector in coordinates: `(-∂h/∂x, -∂h/∂y, 1)`. -/
-theorem normal_eq (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) :
+theorem normal_eq (h : HeightFun) (p : Point2) :
     normal h p = vec3 (-partialX h p.1 p.2) (-partialY h p.1 p.2) 1 := by
   rw [normal, tangentX, tangentY, cross_coordinates]
   simp
@@ -411,20 +411,20 @@ theorem vec3_ne_zero_of_third (a b : ℝ) : vec3 a b 1 ≠ 0 := by
   simp at h2
 
 /-- The normal vector is never zero, since its third coordinate is `1`. -/
-theorem normal_ne_zero (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) : normal h p ≠ 0 := by
+theorem normal_ne_zero (h : HeightFun) (p : Point2) : normal h p ≠ 0 := by
   rw [normal_eq]
   exact vec3_ne_zero_of_third _ _
 
 /-- The first tangent is orthogonal to the normal. -/
 @[simp]
-theorem tangentX_inner_normal (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) :
+theorem tangentX_inner_normal (h : HeightFun) (p : Point2) :
     ⟪tangentX h p, normal h p⟫ = 0 := by
   rw [normal]
   exact inner_cross_left (tangentX h p) (tangentY h p)
 
 /-- The second tangent is orthogonal to the normal. -/
 @[simp]
-theorem tangentY_inner_normal (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) :
+theorem tangentY_inner_normal (h : HeightFun) (p : Point2) :
     ⟪tangentY h p, normal h p⟫ = 0 := by
   rw [normal, real_inner_comm]
   exact inner_cross_right (tangentX h p) (tangentY h p)
@@ -433,14 +433,14 @@ theorem tangentY_inner_normal (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) :
 
 /-- The squared length of the `x`-tangent: `1 + (∂h/∂x)²`. -/
 @[simp]
-theorem inner_tangentX_tangentX (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) :
+theorem inner_tangentX_tangentX (h : HeightFun) (p : Point2) :
     ⟪tangentX h p, tangentX h p⟫ = 1 + partialX h p.1 p.2 ^ 2 := by
   rw [tangentX, vec3_inner]
   ring
 
 /-- The inner product of the two tangents. -/
 @[simp]
-theorem inner_tangentX_tangentY (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) :
+theorem inner_tangentX_tangentY (h : HeightFun) (p : Point2) :
     ⟪tangentX h p, tangentY h p⟫ =
       partialX h p.1 p.2 * partialY h p.1 p.2 := by
   rw [tangentX, tangentY, vec3_inner]
@@ -448,40 +448,40 @@ theorem inner_tangentX_tangentY (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) :
 
 /-- The squared length of the `y`-tangent: `1 + (∂h/∂y)²`. -/
 @[simp]
-theorem inner_tangentY_tangentY (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) :
+theorem inner_tangentY_tangentY (h : HeightFun) (p : Point2) :
     ⟪tangentY h p, tangentY h p⟫ = 1 + partialY h p.1 p.2 ^ 2 := by
   rw [tangentY, vec3_inner]
   ring
 
 @[simp]
-theorem norm_sq_tangentX (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) :
+theorem norm_sq_tangentX (h : HeightFun) (p : Point2) :
     ‖tangentX h p‖ ^ 2 = 1 + partialX h p.1 p.2 ^ 2 := by
   rw [← real_inner_self_eq_norm_sq, inner_tangentX_tangentX]
 
 @[simp]
-theorem norm_sq_tangentY (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) :
+theorem norm_sq_tangentY (h : HeightFun) (p : Point2) :
     ‖tangentY h p‖ ^ 2 = 1 + partialY h p.1 p.2 ^ 2 := by
   rw [← real_inner_self_eq_norm_sq, inner_tangentY_tangentY]
 
 /-! ### The tangent plane as a submodule -/
 
-theorem tangentX_mem_tangentSpace (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) :
+theorem tangentX_mem_tangentSpace (h : HeightFun) (p : Point2) :
     tangentX h p ∈ tangentSpace h p :=
   Submodule.subset_span (by simp)
 
-theorem tangentY_mem_tangentSpace (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) :
+theorem tangentY_mem_tangentSpace (h : HeightFun) (p : Point2) :
     tangentY h p ∈ tangentSpace h p :=
   Submodule.subset_span (by simp)
 
 /-- A vector is in the tangent space exactly when it is a linear combination of
 the two coordinate tangents (`Submodule.mem_span_pair`). -/
-theorem mem_tangentSpace_iff (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) (v : Vec3) :
+theorem mem_tangentSpace_iff (h : HeightFun) (p : Point2) (v : Vec3) :
     v ∈ tangentSpace h p ↔ ∃ a b : ℝ, a • tangentX h p + b • tangentY h p = v := by
   rw [tangentSpace, Submodule.mem_span_pair]
 
 /-- Every vector in the tangent space is orthogonal to the normal, proved with
 `Submodule.span_induction`. -/
-theorem normal_orthogonal_tangentSpace (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) {v : Vec3}
+theorem normal_orthogonal_tangentSpace (h : HeightFun) (p : Point2) {v : Vec3}
     (hv : v ∈ tangentSpace h p) : ⟪v, normal h p⟫ = 0 := by
   refine Submodule.span_induction ?_ ?_ ?_ ?_ hv
   · intro w hw
@@ -497,7 +497,7 @@ theorem normal_orthogonal_tangentSpace (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ
 
 /-- The two coordinate tangents are linearly independent
 (`LinearIndependent.pair_iff`). -/
-theorem linearIndependent_tangents (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) :
+theorem linearIndependent_tangents (h : HeightFun) (p : Point2) :
     LinearIndependent ℝ ![tangentX h p, tangentY h p] := by
   rw [LinearIndependent.pair_iff]
   intro s t hst
@@ -513,7 +513,7 @@ theorem linearIndependent_tangents (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) :
 
 /-- The tangent plane is two-dimensional: it is spanned by two independent
 vectors (`finrank_span_eq_card`). -/
-theorem finrank_tangentSpace (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) :
+theorem finrank_tangentSpace (h : HeightFun) (p : Point2) :
     Module.finrank ℝ (tangentSpace h p) = 2 := by
   rw [tangentSpace]
   have hspan : ({tangentX h p, tangentY h p} : Set Vec3) =
@@ -531,11 +531,11 @@ theorem finrank_tangentSpace (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) :
   rw [hspan, finrank_span_eq_card (linearIndependent_tangents h p)]
   simp
 
-theorem mem_tangentPlane_iff (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) (q : Vec3) :
+theorem mem_tangentPlane_iff (h : HeightFun) (p : Point2) (q : Vec3) :
     q ∈ tangentPlane h p ↔ q - graph h p ∈ tangentSpace h p := Iff.rfl
 
 /-- The normal annihilates every displacement inside the tangent plane. -/
-theorem tangentPlane_inner_normal (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) {q : Vec3}
+theorem tangentPlane_inner_normal (h : HeightFun) (p : Point2) {q : Vec3}
     (hq : q ∈ tangentPlane h p) : ⟪q - graph h p, normal h p⟫ = 0 :=
   normal_orthogonal_tangentSpace h p hq
 
@@ -543,7 +543,7 @@ theorem tangentPlane_inner_normal (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) {q 
 
 /-- The Jacobian sends an `xy`-velocity to the corresponding tangent vector;
 the result is lifted back into `EuclideanSpace` with `WithLp.toLp`. -/
-theorem jacobian_mulVec (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) (v : Vel2) :
+theorem jacobian_mulVec (h : HeightFun) (p : Point2) (v : Vel2) :
     toLp 2 (jacobian h p *ᵥ v) = v 0 • tangentX h p + v 1 • tangentY h p := by
   ext i
   fin_cases i <;> simp [jacobian, tangentX, tangentY, vec3, Matrix.mulVec, dotProduct,
@@ -552,20 +552,20 @@ theorem jacobian_mulVec (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) (v : Vel2) :
 
 /-- The first column of the Jacobian is the `x`-tangent. -/
 @[simp]
-theorem jacobian_mulVec_zero (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) :
+theorem jacobian_mulVec_zero (h : HeightFun) (p : Point2) :
     toLp 2 (jacobian h p *ᵥ ![1, 0]) = tangentX h p := by
   rw [jacobian_mulVec]
   simp
 
 /-- The second column of the Jacobian is the `y`-tangent. -/
 @[simp]
-theorem jacobian_mulVec_one (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) :
+theorem jacobian_mulVec_one (h : HeightFun) (p : Point2) :
     toLp 2 (jacobian h p *ᵥ ![0, 1]) = tangentY h p := by
   rw [jacobian_mulVec]
   simp
 
 /-- The tangent space is the range of the Jacobian. -/
-theorem mem_tangentSpace_iff_jacobian (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) (v : Vec3) :
+theorem mem_tangentSpace_iff_jacobian (h : HeightFun) (p : Point2) (v : Vec3) :
     v ∈ tangentSpace h p ↔ ∃ u : Vel2, toLp 2 (jacobian h p *ᵥ u) = v := by
   rw [mem_tangentSpace_iff]
   constructor
@@ -578,7 +578,7 @@ theorem mem_tangentSpace_iff_jacobian (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ)
 
 /-- Multiplying the Jacobian of the `x`-tangent by an `xy`-velocity gives the
 corresponding combination of the second derivatives `tangentXX`, `tangentXY`. -/
-theorem jacobianTangentX_mulVec (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) (v : Vel2) :
+theorem jacobianTangentX_mulVec (h : HeightFun) (p : Point2) (v : Vel2) :
     toLp 2 (jacobianTangentX h p *ᵥ v) =
       v 0 • tangentXX h p + v 1 • tangentXY h p := by
   ext i
@@ -588,7 +588,7 @@ theorem jacobianTangentX_mulVec (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) (v : 
 
 /-- Multiplying the Jacobian of the `y`-tangent by an `xy`-velocity gives the
 corresponding combination of the second derivatives `tangentYX`, `tangentYY`. -/
-theorem jacobianTangentY_mulVec (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) (v : Vel2) :
+theorem jacobianTangentY_mulVec (h : HeightFun) (p : Point2) (v : Vel2) :
     toLp 2 (jacobianTangentY h p *ᵥ v) =
       v 0 • tangentYX h p + v 1 • tangentYY h p := by
   ext i
@@ -598,13 +598,13 @@ theorem jacobianTangentY_mulVec (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) (v : 
 
 /-- The bottom row of the Jacobian of the `x`-tangent is the first row of the
 Hessian. -/
-theorem jacobianTangentX_apply (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) (j : Fin 2) :
+theorem jacobianTangentX_apply (h : HeightFun) (p : Point2) (j : Fin 2) :
     jacobianTangentX h p 2 j = hessian h p 0 j := by
   fin_cases j <;> simp [jacobianTangentX, hessian]
 
 /-- The bottom row of the Jacobian of the `y`-tangent is the second row of the
 Hessian. -/
-theorem jacobianTangentY_apply (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) (j : Fin 2) :
+theorem jacobianTangentY_apply (h : HeightFun) (p : Point2) (j : Fin 2) :
     jacobianTangentY h p 2 j = hessian h p 1 j := by
   fin_cases j <;> simp [jacobianTangentY, hessian]
 
@@ -614,7 +614,7 @@ The Gram matrix of the tangents is exactly `Jᵀ * J`, where `J` is the
 Jacobian of the graph map. -/
 
 /-- The Gram matrix equals `Jᵀ * J`. -/
-theorem gramMatrix_eq_transpose_mul (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) :
+theorem gramMatrix_eq_transpose_mul (h : HeightFun) (p : Point2) :
     gramMatrix h p = (jacobian h p)ᵀ * jacobian h p := by
   ext i j
   fin_cases i <;> fin_cases j <;>
@@ -623,7 +623,7 @@ theorem gramMatrix_eq_transpose_mul (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) :
 
 /-- The determinant of the Gram matrix is the first fundamental form:
 `1 + (∂h/∂x)² + (∂h/∂y)²`. -/
-theorem det_gramMatrix_eq (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) :
+theorem det_gramMatrix_eq (h : HeightFun) (p : Point2) :
     (gramMatrix h p).det =
       1 + partialX h p.1 p.2 ^ 2 + partialY h p.1 p.2 ^ 2 := by
   rw [gramMatrix, Matrix.det_fin_two_of]
@@ -633,7 +633,7 @@ theorem det_gramMatrix_eq (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) :
 
 /-- The determinant of the Gram matrix equals `‖normal‖²`
 (Lagrange's identity, `inner_cross_self`). -/
-theorem det_gramMatrix (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) :
+theorem det_gramMatrix (h : HeightFun) (p : Point2) :
     (gramMatrix h p).det = ‖normal h p‖ ^ 2 := by
   rw [gramMatrix, Matrix.det_fin_two_of, ← real_inner_self_eq_norm_sq, normal,
     inner_cross_self, real_inner_comm (tangentY h p) (tangentX h p)]
@@ -641,34 +641,34 @@ theorem det_gramMatrix (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) :
 
 /-- The squared norm of the normal is `1 + (∂h/∂x)² + (∂h/∂y)²`
 (`real_inner_self_eq_norm_sq`). -/
-theorem norm_sq_normal (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) :
+theorem norm_sq_normal (h : HeightFun) (p : Point2) :
     ‖normal h p‖ ^ 2 =
       1 + partialX h p.1 p.2 ^ 2 + partialY h p.1 p.2 ^ 2 := by
   rw [← det_gramMatrix, det_gramMatrix_eq]
 
 /-- The area element of a graph over a point: `√(1 + f_x² + f_y²)`.
 This is the factor by which a small `xy`-rectangle is stretched by the graph. -/
-theorem norm_normal (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) :
+theorem norm_normal (h : HeightFun) (p : Point2) :
     ‖normal h p‖ =
       Real.sqrt (1 + partialX h p.1 p.2 ^ 2 + partialY h p.1 p.2 ^ 2) := by
   rw [← Real.sqrt_sq (norm_nonneg (normal h p)), norm_sq_normal]
 
 /-- The unit normal is still orthogonal to the first tangent. -/
 @[simp]
-theorem unitNormal_inner_tangentX (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) :
+theorem unitNormal_inner_tangentX (h : HeightFun) (p : Point2) :
     ⟪unitNormal h p, tangentX h p⟫ = 0 := by
   rw [unitNormal, real_inner_smul_left, real_inner_comm, tangentX_inner_normal h p]
   simp
 
 /-- The unit normal is still orthogonal to the second tangent. -/
 @[simp]
-theorem unitNormal_inner_tangentY (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) :
+theorem unitNormal_inner_tangentY (h : HeightFun) (p : Point2) :
     ⟪unitNormal h p, tangentY h p⟫ = 0 := by
   rw [unitNormal, real_inner_smul_left, real_inner_comm, tangentY_inner_normal h p]
   simp
 
 /-- The unit normal really is a unit vector. -/
-theorem norm_unitNormal (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) : ‖unitNormal h p‖ = 1 := by
+theorem norm_unitNormal (h : HeightFun) (p : Point2) : ‖unitNormal h p‖ = 1 := by
   rw [unitNormal, norm_smul, Real.norm_eq_abs, abs_inv, abs_of_nonneg (norm_nonneg _)]
   exact inv_mul_cancel₀ (norm_ne_zero_iff.mpr (normal_ne_zero h p))
 
@@ -677,26 +677,26 @@ theorem norm_unitNormal (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) : ‖unitNorm
 /-- The gradient as a vector in `ℝ³` is horizontal:
 it is orthogonal to the vertical direction. -/
 @[simp]
-theorem gradient_eq (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) :
+theorem gradient_eq (h : HeightFun) (p : Point2) :
     gradient h p = vec3 (partialX h p.1 p.2) (partialY h p.1 p.2) 0 := rfl
 
 /-- The gradient pairs with the `x`-tangent to give `∂h/∂x`. -/
 @[simp]
-theorem gradient_inner_tangentX (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) :
+theorem gradient_inner_tangentX (h : HeightFun) (p : Point2) :
     ⟪gradient h p, tangentX h p⟫ = partialX h p.1 p.2 := by
   rw [gradient_eq, tangentX, vec3_inner]
   simp
 
 /-- The gradient pairs with the `y`-tangent to give `∂h/∂y`. -/
 @[simp]
-theorem gradient_inner_tangentY (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) :
+theorem gradient_inner_tangentY (h : HeightFun) (p : Point2) :
     ⟪gradient h p, tangentY h p⟫ = partialY h p.1 p.2 := by
   rw [gradient_eq, tangentY, vec3_inner]
   simp
 
 /-- The directional derivative along a tangent combination is the
 corresponding combination of partials. -/
-theorem directionalDerivative_tangentCombination (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ)
+theorem directionalDerivative_tangentCombination (h : HeightFun) (p : Point2)
     (a b : ℝ) :
     directionalDerivative h p (a • tangentX h p + b • tangentY h p) =
       a * partialX h p.1 p.2 + b * partialY h p.1 p.2 := by
@@ -705,7 +705,7 @@ theorem directionalDerivative_tangentCombination (h : ℝ → ℝ → ℝ) (p : 
 
 /-- The divergence of a gradient field is zero when the mixed partials agree:
 for `C²` functions, curl of grad vanishes. -/
-theorem curl_eq_zero_of_eq (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ)
+theorem curl_eq_zero_of_eq (h : HeightFun) (p : Point2)
     (hsym : partialXY h p.1 p.2 = partialYX h p.1 p.2) : curl h p = 0 := by
   simp only [curl, hsym, sub_self]
 

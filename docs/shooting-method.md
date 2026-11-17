@@ -23,7 +23,7 @@ defined explicitly, with the exact Lean names.
 
 > [!NOTE]
 > **Definition (`h`, the height function).** The **height function** is
-> `h : ℝ → ℝ → ℝ`; it assigns to each point `(x, y)` of the plane a real
+> `h : HeightFun`, i.e. `h : ℝ → ℝ → ℝ`; it assigns to each point `(x, y)` of the plane a real
 > number: the height of the surface above it. There is no `def` for `h`
 > itself — it is the abstract input of the whole theory, a free variable of
 > type `ℝ → ℝ → ℝ` that every other definition takes as its first argument:
@@ -47,13 +47,13 @@ defined explicitly, with the exact Lean names.
 > derivatives:
 >
 > ```lean
-> def partialX (h : ℝ → ℝ → ℝ) (x y : ℝ) : ℝ := deriv (fun t => h t y) x
-> def partialY (h : ℝ → ℝ → ℝ) (x y : ℝ) : ℝ := deriv (fun t => h x t) y
+> def partialX (h : HeightFun) (x y : ℝ) : ℝ := deriv (fun t => h t y) x
+> def partialY (h : HeightFun) (x y : ℝ) : ℝ := deriv (fun t => h x t) y
 >
-> def partialXX (h : ℝ → ℝ → ℝ) (x y : ℝ) : ℝ := deriv (fun t => partialX h t y) x
-> def partialXY (h : ℝ → ℝ → ℝ) (x y : ℝ) : ℝ := deriv (fun t => partialX h x t) y
-> def partialYX (h : ℝ → ℝ → ℝ) (x y : ℝ) : ℝ := deriv (fun t => partialY h t y) x
-> def partialYY (h : ℝ → ℝ → ℝ) (x y : ℝ) : ℝ := deriv (fun t => partialY h x t) y
+> def partialXX (h : HeightFun) (x y : ℝ) : ℝ := deriv (fun t => partialX h t y) x
+> def partialXY (h : HeightFun) (x y : ℝ) : ℝ := deriv (fun t => partialX h x t) y
+> def partialYX (h : HeightFun) (x y : ℝ) : ℝ := deriv (fun t => partialY h t y) x
+> def partialYY (h : HeightFun) (x y : ℝ) : ℝ := deriv (fun t => partialY h x t) y
 > ```
 >
 > (`DiffGeom.partialX`, `DiffGeom.partialY`, `DiffGeom.partialXX`,
@@ -66,8 +66,9 @@ defined explicitly, with the exact Lean names.
 > [!NOTE]
 > **Definition (`ℝ²`, the parameter plane).** The **parameter plane** is the
 > domain of `h`: the plane `ℝ²`, whose points are pairs `p : ℝ × ℝ` with
-> coordinates `p.1 = x` (`Prod.fst`) and `p.2 = y` (`Prod.snd`). All
-> simulation happens here: the marble's position is a `p : ℝ × ℝ`, its
+> coordinates `p.1 = x` (`Prod.fst`) and `p.2 = y` (`Prod.snd`); its type
+> synonym is `Point2 = ℝ × ℝ`. All
+> simulation happens here: the marble's position is a `p : Point2`, its
 > velocity is a vector in the plane
 >
 > ```lean
@@ -170,26 +171,26 @@ defined explicitly, with the exact Lean names.
 > geodesic rule into a matrix equation in §2. The Lean facts about it:
 >
 > ```lean
-> theorem normal_eq (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) :
+> theorem normal_eq (h : HeightFun) (p : Point2) :
 >     normal h p = vec3 (-partialX h p.1 p.2) (-partialY h p.1 p.2) 1 := by
 >   rw [normal, tangentX, tangentY, cross_coordinates]
 >   simp
 >
-> theorem normal_ne_zero (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) : normal h p ≠ 0 := by
+> theorem normal_ne_zero (h : HeightFun) (p : Point2) : normal h p ≠ 0 := by
 >   rw [normal_eq]
 >   exact vec3_ne_zero_of_third _ _
 >
-> @[simp] theorem tangentX_inner_normal (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) :
+> @[simp] theorem tangentX_inner_normal (h : HeightFun) (p : Point2) :
 >     ⟪tangentX h p, normal h p⟫ = 0 := by
 >   rw [normal]
 >   exact inner_cross_left (tangentX h p) (tangentY h p)
 >
-> @[simp] theorem tangentY_inner_normal (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) :
+> @[simp] theorem tangentY_inner_normal (h : HeightFun) (p : Point2) :
 >     ⟪tangentY h p, normal h p⟫ = 0 := by
 >   rw [normal, real_inner_comm]
 >   exact inner_cross_right (tangentX h p) (tangentY h p)
 >
-> theorem norm_sq_normal (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) :
+> theorem norm_sq_normal (h : HeightFun) (p : Point2) :
 >     ‖normal h p‖ ^ 2 =
 >       1 + partialX h p.1 p.2 ^ 2 + partialY h p.1 p.2 ^ 2 := by
 >   rw [← det_gramMatrix, det_gramMatrix_eq]
@@ -257,7 +258,7 @@ remainder of this document without further remark.
 > | `u ⬝ᵥ v` | `Matrix.dotProduct` | the dot product `Σᵢ uᵢ vᵢ` of two vectors |
 > | `![a, b]` | `Matrix.vecCons` literal | the vector `(a, b)` as a function `Fin 2 → ℝ`; more generally `![a, b, c]` a 3-vector |
 > | `!![a, b; c, d]` | `Matrix.of` literal | the 2×2 matrix with rows `(a, b)` and `(c, d)` |
-> | `p.1`, `p.2` | `Prod.fst`, `Prod.snd` | the coordinates of `p : ℝ × ℝ`, i.e. `x` and `y` |
+> | `p.1`, `p.2` | `Prod.fst`, `Prod.snd` | the coordinates of `p : Point2`, i.e. `x` and `y` |
 > | `⟪u, v⟫` | `inner` | the Euclidean inner product (same value as `u ⬝ᵥ v`) |
 
 > [!TIP]
@@ -330,17 +331,17 @@ These are the Lean definitions behind the letters:
 ```lean
 /-- The Jacobian of the graph map `(x, y) ↦ (x, y, h x y)`.
 Its two columns are the coordinate tangents. -/
-def jacobian (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) : Mat32 :=
+def jacobian (h : HeightFun) (p : Point2) : Mat32 :=
   !![1, 0; 0, 1; partialX h p.1 p.2, partialY h p.1 p.2]
 
 /-- The Hessian of `h`: the `2×2` matrix of second partials. -/
-def hessian (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) : Mat22 :=
+def hessian (h : HeightFun) (p : Point2) : Mat22 :=
   !![partialXX h p.1 p.2, partialXY h p.1 p.2;
      partialYX h p.1 p.2, partialYY h p.1 p.2]
 
 /-- The Gram matrix of the two tangents, with entries given by the Mathlib
 inner product. -/
-def gramMatrix (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) : Mat22 :=
+def gramMatrix (h : HeightFun) (p : Point2) : Mat22 :=
   !![⟪tangentX h p, tangentX h p⟫, ⟪tangentX h p, tangentY h p⟫;
      ⟪tangentY h p, tangentX h p⟫, ⟪tangentY h p, tangentY h p⟫]
 ```
@@ -377,12 +378,12 @@ The two building blocks, verbatim from `Shooting.lean`:
 ```lean
 /-- The parameter gradient of `h`: the vector `(∂₀h, ∂₁h) = (partialX, partialY)`,
 written with the `![·, ·]` vector literal. -/
-def gradientVec (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) : Vel2 :=
+def gradientVec (h : HeightFun) (p : Point2) : Vel2 :=
   ![partialX h p.1 p.2, partialY h p.1 p.2]
 
 /-- The Hessian quadratic form `vᵀ H v`: the second derivative of `h` along
 the parameter velocity `v`, as a dot product `v ⬝ᵥ (H · v)`. -/
-def hessQuad (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) (v : Vel2) : ℝ :=
+def hessQuad (h : HeightFun) (p : Point2) (v : Vel2) : ℝ :=
   v ⬝ᵥ (hessian h p *ᵥ v)
 ```
 
@@ -640,7 +641,7 @@ The real normal to the surface at `p` is the cross product of the tangents,
 and that is literally how `DiffGeom.normal` is defined:
 
 ```lean
-def normal (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) : Vec3 :=
+def normal (h : HeightFun) (p : Point2) : Normal :=
   cross (tangentX h p) (tangentY h p)
 ```
 
@@ -703,7 +704,7 @@ forward you must carry both. Here everything lives in the parameter plane:
 ```lean
 /-- The state of a shot: parameter position and parameter velocity. -/
 structure ShotState where
-  pos : ℝ × ℝ
+  pos : Point2
   vel : Vel2   -- = Fin 2 → ℝ; components are `vel 0` and `vel 1`, i.e. (v₀, v₁)
 ```
 
@@ -718,7 +719,7 @@ position's derivative is the velocity, and the velocity's derivative is the
 geodesic acceleration `geoAccel`:
 
 ```lean
-def field (h : ℝ → ℝ → ℝ) (s : ShotState) : ShotState :=
+def field (h : HeightFun) (s : ShotState) : ShotState :=
   ⟨(s.vel 0, s.vel 1), geoAccel h s.pos s.vel⟩
 ```
 
@@ -729,7 +730,7 @@ It does not depend on time, so every integrator just reads `field h s`.
 ```lean
 /-- A one-step method: given the surface `h`, the current state and the
 time step, produce the next state. -/
-abbrev StepMethod := (ℝ → ℝ → ℝ) → ShotState → ℝ → ShotState
+abbrev StepMethod := HeightFun → ShotState → ℝ → ShotState
 ```
 
 This is the function type shared by every integrator in the file: Euler and
@@ -758,7 +759,7 @@ start (`k₁`), two midpoint probes (`k₂, k₃`), slope at the end (`k₄`),
 then a 1–2–2–1 weighted average:
 
 ```lean
-def rk4Increments (h : ℝ → ℝ → ℝ) (s : ShotState) (dt : ℝ) :
+def rk4Increments (h : HeightFun) (s : ShotState) (dt : ℝ) :
     ShotState × ShotState × ShotState × ShotState :=
   let k₁ := field h s
   let k₂ := field h (s + (dt / 2) • k₁)
@@ -782,7 +783,7 @@ accuracy, and it is the classical workhorse of numerical ODE solving.
 The trajectory is just iteration of the chosen stepper — a recursion on `n`:
 
 ```lean
-def shoot (step : StepMethod) (h : ℝ → ℝ → ℝ) (s₀ : ShotState) (dt : ℝ) :
+def shoot (step : StepMethod) (h : HeightFun) (s₀ : ShotState) (dt : ℝ) :
     ℕ → ShotState
   | 0 => s₀
   | (n + 1) => step h (shoot step h s₀ dt n) dt

@@ -122,9 +122,9 @@ methods (Euler, Runge–Kutta) expressible uniformly. -/
 
 /-- The state of a shot: parameter position and parameter velocity. -/
 structure ShotState where
-  /-- Position `(x, y)` in the parameter plane. -/
-  pos : ℝ × ℝ
-  /-- Velocity `(x', y')` in the parameter plane. -/
+  /-- Position in the parameter plane. -/
+  pos : Point2
+  /-- Velocity in the parameter plane. -/
   vel : Vel2
 
 /-- Coordinatewise addition of shot states. -/
@@ -166,7 +166,7 @@ The classical fourth-order method, expressed through the same `field` and
 the same `Add` / `SMul` structure. Defined now, proofs later. -/
 
 /-- The four RK4 increments of a state with time step `dt`. -/
-def rk4Increments (h : ℝ → ℝ → ℝ) (s : ShotState) (dt : ℝ) :
+def rk4Increments (h : HeightFun) (s : ShotState) (dt : ℝ) :
     ShotState × ShotState × ShotState × ShotState :=
   let k₁ := field h s
   let k₂ := field h (s + (dt / 2) • k₁)
@@ -196,12 +196,12 @@ def shoot (step : StepMethod) (h : HeightFun) (s₀ : ShotState) (dt : ℝ) :
   | (n + 1) => step h (shoot step h s₀ dt n) dt
 
 /-- The trajectory produced by explicit Euler: the baseline method. -/
-abbrev eulerTrajectory (h : ℝ → ℝ → ℝ) (s₀ : ShotState) (dt : ℝ) (n : ℕ) :
+abbrev eulerTrajectory (h : HeightFun) (s₀ : ShotState) (dt : ℝ) (n : ℕ) :
     ShotState :=
   shoot eulerStep h s₀ dt n
 
 /-- The trajectory produced by Runge–Kutta 4. -/
-abbrev rk4Trajectory (h : ℝ → ℝ → ℝ) (s₀ : ShotState) (dt : ℝ) (n : ℕ) :
+abbrev rk4Trajectory (h : HeightFun) (s₀ : ShotState) (dt : ℝ) (n : ℕ) :
     ShotState :=
   shoot rk4Step h s₀ dt n
 
