@@ -31,18 +31,13 @@ defined explicitly, with the exact Lean names.
 >
 > ```lean
 > -- the type of the height function: two coordinates in, one height out
-> --   h : ℝ → ℝ → ℝ    i.e.    h x y = height above (x, y)
+> --   h : HeightFun    i.e.    h x y = height above (x, y)
 > -- there is no `def h`; it is the abstract parameter. Its type synonym is
 > --   abbrev HeightFun : Type := ℝ → ℝ → ℝ
 > -- and every definition takes it as its first argument:
 > --   graph h,  tangentX h,  normal h,  hessian h,  geoAccel h ...
-> -- concrete instances are supplied where needed, such as
-> --   planeHeight a b c = fun x y => a * x + b * y + c
-> --   bowlHeight        = fun x y => x ^ 2 + y ^ 2
+> -- concrete instances are supplied where needed:
 > ```
->
-> (`DiffGeom.planeHeight`, `DiffGeom.bowlHeight`, `DiffGeom.saddleHeight`
-> are the worked examples proved in `DifferentialGeometry.lean`):
 >
 > ```lean
 > /-- A plane with slopes `a` and `b` and height `c` at the origin. -/
@@ -57,6 +52,9 @@ defined explicitly, with the exact Lean names.
 > def saddleHeight (x y : ℝ) : ℝ :=
 >   x ^ 2 - y ^ 2
 > ```
+>
+> (`DiffGeom.planeHeight`, `DiffGeom.bowlHeight`, `DiffGeom.saddleHeight`
+> are the worked examples proved in `DifferentialGeometry.lean`.)
 >
 > What Lean *does* define for every `h` are the derivatives, as one-variable
 > derivatives:
