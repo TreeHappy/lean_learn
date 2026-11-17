@@ -6,7 +6,7 @@ want to roll a marble across it with one unusual physics rule: the marble's
 The paths that obey this rule are the **geodesics** of the surface, and the
 "shooting method" in `lean/Brane/Shooting.lean` computes them numerically.
 The only background you need is: partial derivatives, the dot product, and
-how to multiply a matri by a vector.
+how to multiply a matrix by a vector.
 
 Everything below cites the actual Lean code. All definitions live in the
 namespace `Brane.Shoot` (file `lean/Brane/Shooting.lean`) and the geometry
