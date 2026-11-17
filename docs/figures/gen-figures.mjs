@@ -157,4 +157,64 @@ write("rk4-slopes.svg", `
   <text x="360" y="250" text-anchor="middle" fill="${C.subtext}">rk4Step: sₙ₊₁ = s + (dt/6)(k₁ + 2k₂ + 2k₃ + k₄) — the step lands on the true path (grey)</text>
   </g>`, 720, 260);
 
+/* ============================================================
+   6. surface-ingredients: plane point, lift, tangents, normal
+   ============================================================ */
+{
+  // a gentle bump surface, drawn as a wireframe patch
+  const h = (x, y) => 1.6 * Math.exp(-((x - 1.2) ** 2 + (y - 1.0) ** 2) / 1.2);
+  const P = (x, y, z) => [360 + 42 * x + 20 * y, 150 - 14 * y - 34 * z];
+  const px = 0.35, py = 0.25, pz = h(px, py);
+  // tangents at the point
+  const eps = 1e-4;
+  const hx = (h(px + eps, py) - h(px - eps, py)) / (2 * eps);
+  const hy = (h(px, py + eps) - h(px, py - eps)) / (2 * eps);
+  const arrow = (from, to, color, label, lx, ly, anchor) => {
+    const dx = to[0] - from[0], dy = to[1] - from[1];
+    const L = Math.hypot(dx, dy), ux = dx / L, uy = dy / L;
+    const tipx = from[0] + dx + 9 * ux, tipy = from[1] + dy + 9 * uy;
+    return `<g stroke="${color}" stroke-width="3" fill="${color}">
+      <line x1="${from[0]}" y1="${from[1]}" x2="${to[0]}" y2="${to[1]}"/>
+      <polygon points="${tipx.toFixed(1)},${tipy.toFixed(1)} ${(to[0] + 4.5 * uy).toFixed(1)},${(to[1] - 4.5 * ux).toFixed(1)} ${(to[0] - 4.5 * uy).toFixed(1)},${(to[1] + 4.5 * ux).toFixed(1)}"/>
+    </g>
+    <text x="${lx}" y="${ly}" fill="${color}" text-anchor="${anchor}">${label}</text>\n`;
+  };
+  const [bx, by] = P(px, py, 0), [sx, sy] = P(px, py, pz);
+  let s = "";
+  // wireframe patch, quads back-to-front
+  const N = 4, M = 3;
+  for (let j = M - 1; j >= 0; j--) {
+    for (let i = 0; i < N; i++) {
+      const quad = [P(i, j + 1, h(i, j + 1)), P(i + 1, j + 1, h(i + 1, j + 1)),
+                    P(i + 1, j, h(i + 1, j)), P(i, j, h(i, j))];
+      s += `<polygon points="${quad.map((p) => p.map((v) => v.toFixed(1)).join(",")).join(" ")}"
+        fill="${C.blue}" fill-opacity="0.12" stroke="${C.blue}" stroke-width="1" stroke-opacity="0.8"/>\n`;
+    }
+  }
+  // plane patch underneath
+  const Q = (x, y) => [360 + 42 * x + 20 * y, 250 - 14 * y];
+  const corners = [Q(0, 0), Q(N, 0), Q(N, M), Q(0, M)]
+    .map((p) => p.join(",")).join(" ");
+  s += `<polygon points="${corners}" fill="none" stroke="${C.overlay}" stroke-width="1.2" stroke-dasharray="4 4" opacity="0.6"/>\n`;
+  s += `<circle cx="${bx.toFixed(1)}" cy="${by.toFixed(1)}" r="4" fill="${C.peach}"/>\n`;
+  s += `<text x="${(bx + 10).toFixed(1)}" y="${(by + 18).toFixed(1)}" fill="${C.peach}">p = (x, y) in the parameter plane</text>\n`;
+  // lift stem
+  s += `<line x1="${bx.toFixed(1)}" y1="${by.toFixed(1)}" x2="${sx.toFixed(1)}" y2="${sy.toFixed(1)}" stroke="${C.peach}" stroke-width="1.3" stroke-dasharray="3 3" opacity="0.8"/>\n`;
+  s += `<circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="5.5" fill="${C.peach}"/>\n`;
+  s += `<text x="${(sx - 150).toFixed(1)}" y="${(sy + 42).toFixed(1)}" fill="${C.peach}">σ(p) = (x, y, h(x,y))</text>\n`;
+  // tangents and normal
+  const T = (a) => P(px + a, py, pz + a * hx);
+  const S = (b) => P(px, py + b, pz + b * hy);
+  const tX = T(0.85), tY = S(0.85);
+  // unit normal (−hx, −hy, 1), scaled
+  const nL = Math.hypot(hx, hy, 1);
+  const nz = [(-hx / nL) * 0.75, (-hy / nL) * 0.75, (1 / nL) * 0.75];
+  const nrm = P(px + nz[0], py + nz[1], pz + nz[2]);
+  s += arrow([sx, sy], tX, C.sky, "tangentX = (1, 0, ∂ₓh)", tX[0] + 12, tX[1] + 4, "start");
+  s += arrow([sx, sy], tY, C.green, "tangentY = (0, 1, ∂ᵧh)", tY[0] - 12, tY[1] - 12, "end");
+  s += arrow([sx, sy], nrm, C.mauve, "normal = cross(tangentX, tangentY) = (−∂ₓh, −∂ᵧh, 1)", 40, 52, "start");
+  s += `<text x="360" y="312" text-anchor="middle" fill="${C.subtext}">the ingredients at a point: the lift σ(p), the two coordinate tangents, and the normal they span</text>\n`;
+  write("surface-ingredients.svg", s, 720, 325);
+}
+
 console.log("figures regenerated");

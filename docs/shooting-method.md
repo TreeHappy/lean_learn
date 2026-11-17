@@ -17,45 +17,95 @@ they are built from lives in `Brane.DiffGeom` (file
 
 ## 1. The surface: the graph of a height function
 
-The surface is described by a height function `h : ℝ → ℝ → ℝ` over the
-coordinate plane. In `DifferentialGeometry.lean`:
-
-```lean
-def graph (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) : Vec3 :=
-  vec3 p.1 p.2 (h p.1 p.2)
-```
-
-So a point `p = (x, y)` of the plane is lifted to the surface point
-`(x, y, h(x, y))`. The ingredients, with the exact Lean names:
-
-| Object | Lean | Definition |
-|---|---|---|
-| parameter plane | coordinates `p : ℝ × ℝ` | the domain of `h` |
-| height function | `h : ℝ → ℝ → ℝ` | differentiated by `partialX h x y = deriv (fun t => h t y) x` etc. |
-| surface point | `graph h p = (x, y, h x y)` | `DiffGeom.graph` |
-| coordinate tangents | `tangentX h p = (1, 0, ∂ₓh)`, `tangentY h p = (0, 1, ∂ᵧh)` | `DiffGeom.tangentX`, `tangentY` |
-| surface normal | `normal h p = cross (tangentX h p) (tangentY h p)` | `DiffGeom.normal` |
+The surface is described by a single function `h` over a flat plane; every
+other object of the theory is built from it. Here are the ingredients, each
+defined explicitly, with the exact Lean names.
 
 > [!NOTE]
-> **Definition (σ, the surface map).** Throughout this document we write
+> **Definition (`h`, the height function).** `h : ℝ → ℝ → ℝ` assigns to each
+> point `(x, y)` of the plane a real number: the height of the surface above
+> it. Its partial derivatives are the one-variable derivatives
+>
+> ```lean
+> def partialX (h : ℝ → ℝ → ℝ) (x y : ℝ) : ℝ := deriv (fun t => h t y) x
+> def partialY (h : ℝ → ℝ → ℝ) (x y : ℝ) : ℝ := deriv (fun t => h x t) y
+> ```
+>
+> written `∂ₓh` and `∂ᵧh`, and the second partials `partialXX`, `partialXY`,
+> `partialYX`, `partialYY` (written `∂ₓₓh`, `∂ₓᵧh`, …) are defined the same
+> way (`DiffGeom.partialX`, …).
+
+> [!NOTE]
+> **Definition (the parameter plane).** The domain of `h` is the plane
+> `ℝ²`, whose points are pairs `p : ℝ × ℝ` with coordinates `p.1 = x`,
+> `p.2 = y`. All simulation happens here: the marble's position and
+> velocity are elements of this plane, and `h` is only *evaluated* on it to
+> produce 3D points. (Velocities in the plane are `Vel2 = Fin 2 → ℝ`, see
+> §1.1.)
+
+> [!NOTE]
+> **Definition (σ, the surface map, and `graph h p`).** The surface itself
+> is the map `ℝ² → ℝ³`
+>
+> ```lean
+> def graph (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) : Vec3 :=
+>   vec3 p.1 p.2 (h p.1 p.2)
+> ```
+>
+> and we write
 >
 > ```text
 > σ := graph h,  i.e.  σ(p) = (p.1, p.2, h p.1 p.2),
 > ```
 >
-> for the parametrized surface `ℝ² → ℝ³` (`DiffGeom.graph`). A path
-> `γ : ℝ → ℝ²` in the plane then lifts to the 3D curve `σ ∘ γ` — the
-> marble's actual position on the surface. The embedding map `σ` is the one
-> whose derivatives (`∂ₓσ = tangentX h p`, `∂ᵧσ = tangentY h p`) appear in
-> every formula below.
+> (`DiffGeom.graph`). It sends a plane point `p = (x, y)` to the surface
+> point `(x, y, h(x, y))`: the first two coordinates are untouched, only the
+> height is added. A path `γ : ℝ → ℝ²` in the plane then lifts to the 3D
+> curve `σ ∘ γ` — the marble's actual position on the surface.
+
+> [!NOTE]
+> **Definition (`tangentX`, `tangentY`, the coordinate tangents).** At a
+> point `p`, the two edge directions of the surface are the derivatives of
+> `σ` in the `x`- and `y`-directions:
+>
+> ```lean
+> def tangentX (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) : Vec3 :=
+>   vec3 1 0 (partialX h p.1 p.2)   -- = ∂ₓσ(p) = (1, 0, ∂ₓh)
+> def tangentY (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) : Vec3 :=
+>   vec3 0 1 (partialY h p.1 p.2)   -- = ∂ᵧσ(p) = (0, 1, ∂ᵧh)
+> ```
+>
+> (`DiffGeom.tangentX`, `DiffGeom.tangentY`). Together they span the
+> tangent plane: every velocity the marble can have on the surface is a
+> combination `v₀ · tangentX + v₁ · tangentY` of these two.
+
+> [!NOTE]
+> **Definition (`normal`, the surface normal).** The direction sticking
+> out of the surface is the cross product of the two tangents:
+>
+> ```lean
+> def normal (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) : Vec3 :=
+>   cross (tangentX h p) (tangentY h p)
+> ```
+>
+> (`DiffGeom.normal`). Computed in coordinates it is
+> `normal h p = (-∂ₓh, -∂ᵧh, 1)` (proved in `normal_eq`), and by
+> construction it is orthogonal to both tangents — that orthogonality
+> (`tangentX_inner_normal`, `tangentY_inner_normal`) is what turns the
+> geodesic rule into a matrix equation in §2.
+
+![the ingredients at a point: the lift σ(p), the two coordinate tangents, and the normal they span](figures/surface-ingredients.svg)
+
+The embedding map `σ` is the one whose derivatives (`∂ₓσ = tangentX h p`,
+`∂ᵧσ = tangentY h p`) appear in every formula below.
 
 Some facts are already *proved* in `DifferentialGeometry.lean`, and they are
 the ones we rely on:
 
 > [!NOTE]
-> **Lemma (DiffGeom.normal_eq, DiffGeom.normal_ne_zero).**
-> `normal h p = (-∂ₓh, -∂ᵧh, 1)`. In particular the normal is never zero:
-> its z-component is always `1`.
+> **Lemma (DiffGeom.normal_ne_zero).**
+> The normal is never zero: `normal h p = (-∂ₓh, -∂ᵧh, 1)` has
+> z-component `1`.
 
 > [!NOTE]
 > **Lemma (DiffGeom.norm_sq_normal).**
