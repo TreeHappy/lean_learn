@@ -98,6 +98,35 @@ abbrev Mat22 : Type := Matrix (Fin 2) (Fin 2) ℝ
 `Fin 2 → ℝ`, the thing a Jacobian acts on by `Matrix.mulVec`. -/
 abbrev Vel2 : Type := Fin 2 → ℝ
 
+/-! ### Type synonyms for the roles a type plays
+
+Everything below is a *pure type synonym*: each `abbrev` is definitionally
+equal to the type it abbreviates, so all existing lemmas and instances apply
+unchanged. Their only job is documentation-by-types: a signature can say
+whether an argument is meant as a plane point, a tangent, a normal, ... -/
+
+/-- A point of the parameter plane: coordinates `(x, y)`. -/
+abbrev Point2 : Type := ℝ × ℝ
+
+/-- A point of ambient `ℝ³`, e.g. the position of the marble on the surface. -/
+abbrev Point3 : Type := Vec3
+
+/-- A height function over the parameter plane: the abstract input of the
+whole theory. -/
+abbrev HeightFun : Type := ℝ → ℝ → ℝ
+
+/-- A tangent vector of the surface at some point. -/
+abbrev Tangent : Type := Vec3
+
+/-- A normal vector of the surface at some point. -/
+abbrev Normal : Type := Vec3
+
+/-- An acceleration vector in the parameter plane. -/
+abbrev Accel2 : Type := Vel2
+
+/-- An acceleration vector in ambient `ℝ³`. -/
+abbrev Accel3 : Type := Vec3
+
 /-- The vector with coordinates `(a, b, c)`. -/
 def vec3 (a b c : ℝ) : Vec3 := !₂[a, b, c]
 
@@ -106,9 +135,9 @@ def vec3 (a b c : ℝ) : Vec3 := !₂[a, b, c]
 def cross (a b : Vec3) : Vec3 :=
   toLp 2 (WithLp.ofLp a ⨯₃ WithLp.ofLp b)
 
-/-- The graph of `h`, as a map `ℝ² → ℝ³`:
+/-- The graph of `h`, as a map from the parameter plane to `ℝ³`:
 the input `(x, y)` is mapped to `(x, y, h x y)`. -/
-def graph (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) : Vec3 :=
+def graph (h : HeightFun) (p : Point2) : Point3 :=
   vec3 p.1 p.2 (h p.1 p.2)
 
 /-- The first partial derivative of `h` with respect to its first argument:
@@ -133,28 +162,28 @@ def partialYY (h : ℝ → ℝ → ℝ) (x y : ℝ) : ℝ := deriv (fun t => par
 
 /-- The tangent vector in the `x`-direction:
 the derivative of `x ↦ (x, y, h x y)` at `x`. -/
-def tangentX (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) : Vec3 :=
+def tangentX (h : HeightFun) (p : Point2) : Tangent :=
   vec3 1 0 (partialX h p.1 p.2)
 
 /-- The tangent vector in the `y`-direction:
 the derivative of `y ↦ (x, y, h x y)` at `y`. -/
-def tangentY (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) : Vec3 :=
+def tangentY (h : HeightFun) (p : Point2) : Tangent :=
   vec3 0 1 (partialY h p.1 p.2)
 
 /-- The derivative of the `x`-tangent with respect to `x`: `∂²σ/∂x²`. -/
-def tangentXX (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) : Vec3 := vec3 0 0 (partialXX h p.1 p.2)
+def tangentXX (h : HeightFun) (p : Point2) : Tangent := vec3 0 0 (partialXX h p.1 p.2)
 
 /-- The derivative of the `x`-tangent with respect to `y`: `∂²σ/∂y∂x`. -/
-def tangentXY (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) : Vec3 := vec3 0 0 (partialXY h p.1 p.2)
+def tangentXY (h : HeightFun) (p : Point2) : Tangent := vec3 0 0 (partialXY h p.1 p.2)
 
 /-- The derivative of the `y`-tangent with respect to `x`: `∂²σ/∂x∂y`. -/
-def tangentYX (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) : Vec3 := vec3 0 0 (partialYX h p.1 p.2)
+def tangentYX (h : HeightFun) (p : Point2) : Tangent := vec3 0 0 (partialYX h p.1 p.2)
 
 /-- The derivative of the `y`-tangent with respect to `y`: `∂²σ/∂y²`. -/
-def tangentYY (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) : Vec3 := vec3 0 0 (partialYY h p.1 p.2)
+def tangentYY (h : HeightFun) (p : Point2) : Tangent := vec3 0 0 (partialYY h p.1 p.2)
 
 /-- The normal vector, defined as the cross product of the two tangents. -/
-def normal (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) : Vec3 :=
+def normal (h : HeightFun) (p : Point2) : Normal :=
   cross (tangentX h p) (tangentY h p)
 
 /-- The tangent space at a point, spanned by the coordinate tangents. -/
@@ -213,7 +242,7 @@ def curl (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) : ℝ :=
   partialYX h p.1 p.2 - partialXY h p.1 p.2
 
 /-- The unit normal vector. -/
-def unitNormal (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) : Vec3 :=
+def unitNormal (h : HeightFun) (p : Point2) : Normal :=
   (‖normal h p‖)⁻¹ • normal h p
 
 /-! ### Definitional equations

@@ -6,7 +6,7 @@ want to roll a marble across it with one unusual physics rule: the marble's
 The paths that obey this rule are the **geodesics** of the surface, and the
 "shooting method" in `lean/Brane/Shooting.lean` computes them numerically.
 The only background you need is: partial derivatives, the dot product, and
-how to multiply a matrix by a vector.
+how to multiply a matri by a vector.
 
 Everything below cites the actual Lean code. All definitions live in the
 namespace `Brane.Shoot` (file `lean/Brane/Shooting.lean`) and the geometry
@@ -31,9 +31,11 @@ defined explicitly, with the exact Lean names.
 > ```lean
 > -- the type of the height function: two coordinates in, one height out
 > --   h : ℝ → ℝ → ℝ    i.e.    h x y = height above (x, y)
-> -- there is no `def h`; it is the abstract parameter, e.g.
+> -- there is no `def h`; it is the abstract parameter. Its type synonym is
+> --   abbrev HeightFun : Type := ℝ → ℝ → ℝ
+> -- and every definition takes it as its first argument:
 > --   graph h,  tangentX h,  normal h,  hessian h,  geoAccel h ...
-> -- and concrete instances are supplied where needed, such as
+> -- concrete instances are supplied where needed, such as
 > --   planeHeight a b c = fun x y => a * x + b * y + c
 > --   bowlHeight        = fun x y => x ^ 2 + y ^ 2
 > ```
@@ -82,7 +84,7 @@ defined explicitly, with the exact Lean names.
 > `ℝ² → ℝ³`
 >
 > ```lean
-> def graph (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) : Vec3 :=
+> def graph (h : HeightFun) (p : Point2) : Point3 :=
 >   vec3 p.1 p.2 (h p.1 p.2)
 > ```
 >
@@ -116,9 +118,9 @@ defined explicitly, with the exact Lean names.
 > `σ` in the `x`- and `y`-directions:
 >
 > ```lean
-> def tangentX (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) : Vec3 :=
+> def tangentX (h : HeightFun) (p : Point2) : Tangent :=
 >   vec3 1 0 (partialX h p.1 p.2)   -- = ∂ₓσ(p) = (1, 0, ∂ₓh)
-> def tangentY (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) : Vec3 :=
+> def tangentY (h : HeightFun) (p : Point2) : Tangent :=
 >   vec3 0 1 (partialY h p.1 p.2)   -- = ∂ᵧσ(p) = (0, 1, ∂ᵧh)
 > ```
 >
@@ -157,7 +159,7 @@ defined explicitly, with the exact Lean names.
 > sticking out of the surface: the cross product of the two tangents,
 >
 > ```lean
-> def normal (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) : Vec3 :=
+> def normal (h : HeightFun) (p : Point2) : Normal :=
 >   cross (tangentX h p) (tangentY h p)
 > ```
 >
@@ -223,6 +225,26 @@ remainder of this document without further remark.
 > values `v 0` and `v 1`. In ordinary mathematical notation we write
 > `v = (v₀, v₁)` with `v₀ := v 0` and `v₁ := v 1`. In prose we use `v₀, v₁`;
 > when quoting Lean verbatim we use `v 0, v 1`.
+
+> [!NOTE]
+> **Type synonyms.** To let signatures document the *role* of each argument,
+> `DifferentialGeometry.lean` defines pure type synonyms. Each is
+> definitionally equal to the type it abbreviates, so every lemma above
+> applies unchanged — the alias only says what the value is *meant* to be:
+>
+> | Alias | Definition | Role |
+> |---|---|---|
+> | `Point2` | `abbrev Point2 : Type := ℝ × ℝ` | a point of the parameter plane |
+> | `Point3` | `abbrev Point3 : Type := Vec3` | a position in ambient `ℝ³` |
+> | `HeightFun` | `abbrev HeightFun : Type := ℝ → ℝ → ℝ` | a height function over the plane |
+> | `Tangent` | `abbrev Tangent : Type := Vec3` | a tangent vector at a point |
+> | `Normal` | `abbrev Normal : Type := Vec3` | a normal vector at a point |
+> | `Accel2` | `abbrev Accel2 : Type := Vel2` | an acceleration in the plane |
+> | `Accel3` | `abbrev Accel3 : Type := Vec3` | an acceleration in ambient `ℝ³` |
+>
+> E.g. `graph h p` is typed `(HeightFun) → (Point2) → (Point3)`, and
+> `normal h p : Normal`, even though all of them compute at the type of
+> plain coordinates.
 
 > [!IMPORTANT]
 > **Notation table.** The following notations appear in the Lean sources
@@ -342,7 +364,7 @@ exactly this in Lean: `gramMatrix h p = (jacobian h p)ᵀ * jacobian h p`)
 and `∇h = (∂ₓh, ∂ᵧh)`. Solve for `γ̈` by multiplying with `G⁻¹`:
 
 ```lean
-def geoAccel (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) (v : Vel2) : Vel2 :=
+def geoAccel (h : HeightFun) (p : Point2) (v : Vel2) : Accel2 :=
   -((gramMatrix h p)⁻¹ *ᵥ (hessQuad h p v • gradientVec h p))
 ```
 
@@ -601,7 +623,7 @@ This is precisely `γ̈ = geoAccel h (γ t) γ̇` once you multiply by `G⁻¹`.
 The Lean statement, waiting for its proof in `Shooting.lean`:
 
 ```lean
-theorem geoAccel_solves_geodesic (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) (v : Vel2) :
+theorem geoAccel_solves_geodesic (h : HeightFun) (p : Point2) (v : Vel2) :
     gramMatrix h p *ᵥ geoAccel h p v + hessQuad h p v • gradientVec h p = 0 := by
   sorry
 ```
@@ -639,7 +661,7 @@ So:
 > shear. This is stated as a Lean exercise:
 >
 > ```lean
-> theorem e3_eq_normal_add_gradient (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) :
+> theorem e3_eq_normal_add_gradient (h : HeightFun) (p : Point2) :
 >     normal h p + gradient h p = vec3 0 0 1 := by
 >   sorry
 > ```
@@ -783,11 +805,11 @@ steppers. That is the whole reason `StepMethod` exists.
 ```lean
 /-- The initial state: start at `p` with velocity `speed` in the direction
 `dir`. -/
-def muzzle (p : ℝ × ℝ) (dir : Vel2) (speed : ℝ) : ShotState :=
+def muzzle (p : Point2) (dir : Vel2) (speed : ℝ) : ShotState :=
   ⟨p, fun k => speed * dir k⟩
 
 /-- The spatial point reached by a shot: the lifted parameter position. -/
-def impactPoint (h : ℝ → ℝ → ℝ) (s : ShotState) : Vec3 :=
+def impactPoint (h : HeightFun) (s : ShotState) : Point3 :=
   graph h s.pos
 ```
 

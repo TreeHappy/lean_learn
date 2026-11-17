@@ -64,12 +64,12 @@ Everything here is a `def` built from `Brane.DiffGeom`; no proofs yet. -/
 
 /-- The parameter gradient of `h`, as a `Fin 2 → ℝ` vector:
 `(∂₀h, ∂₁h) = (partialX, partialY)`. -/
-def gradientVec (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) : Vel2 :=
+def gradientVec (h : HeightFun) (p : Point2) : Vel2 :=
   ![partialX h p.1 p.2, partialY h p.1 p.2]
 
 /-- The Hessian quadratic form `γ̇ᵀ H γ̇`: the second derivative of `h` along
 the parameter velocity `v`. -/
-def hessQuad (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) (v : Vel2) : ℝ :=
+def hessQuad (h : HeightFun) (p : Point2) (v : Vel2) : ℝ :=
   v ⬝ᵥ (hessian h p *ᵥ v)
 
 /-- The geodesic acceleration in parameter space, as a matrix–vector
@@ -79,7 +79,7 @@ expression:
 
 A parameter curve `γ` with velocity `v = γ̇` is a geodesic exactly when its
 acceleration satisfies `γ̈ = geoAccel h γ γ̈`. -/
-def geoAccel (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) (v : Vel2) : Vel2 :=
+def geoAccel (h : HeightFun) (p : Point2) (v : Vel2) : Accel2 :=
   -((gramMatrix h p)⁻¹ *ᵥ (hessQuad h p v • gradientVec h p))
 
 /-! ### Exercises: the geodesic equation
@@ -97,7 +97,7 @@ Hints:
   `1 + |∇h|² ≥ 1`, so `G` is always invertible — see `DiffGeom.det_gramMatrix_eq`);
 * `DiffGeom.gramMatrix_eq_transpose_mul` to expand `G` through the tangents;
 * the definitions `hessQuad`, `gradientVec` are `rfl`-transparent. -/
-theorem geoAccel_solves_geodesic (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) (v : Vel2) :
+theorem geoAccel_solves_geodesic (h : HeightFun) (p : Point2) (v : Vel2) :
     gramMatrix h p *ᵥ geoAccel h p v + hessQuad h p v • gradientVec h p = 0 := by
   sorry
 
@@ -109,7 +109,7 @@ surface normal: `normal h p = cross (tangentX h p) (tangentY h p)` differs from
 
 Hints: `DiffGeom.normal_eq`, `DiffGeom.gradient_eq`, `DiffGeom.vec3_add`,
 `DiffGeom.vec3_eq_zero_iff`. -/
-theorem e3_eq_normal_add_gradient (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) :
+theorem e3_eq_normal_add_gradient (h : HeightFun) (p : Point2) :
     normal h p + gradient h p = vec3 0 0 1 := by
   sorry
 
@@ -154,7 +154,7 @@ abbrev StepMethod := (ℝ → ℝ → ℝ) → ShotState → ℝ → ShotState
 /-- The derivative of a shot state along the flow: velocity plus geodesic
 acceleration. This is the vector field whose integral curve is the shot;
 it does not depend explicitly on time, so all methods read `field h s`. -/
-def field (h : ℝ → ℝ → ℝ) (s : ShotState) : ShotState :=
+def field (h : HeightFun) (s : ShotState) : ShotState :=
   ⟨(s.vel 0, s.vel 1), geoAccel h s.pos s.vel⟩
 
 /-- One explicit-Euler step: `sₙ₊₁ = sₙ + Δt · field h sₙ`. -/
@@ -184,13 +184,13 @@ def rk4Step : StepMethod := fun h s dt =>
 
 /-- The muzzle state: start at `p` with velocity `speed` in the direction
 `dir` (a point of the unit-speed directions of the parameter plane). -/
-def muzzle (p : ℝ × ℝ) (dir : Vel2) (speed : ℝ) : ShotState :=
+def muzzle (p : Point2) (dir : Vel2) (speed : ℝ) : ShotState :=
   ⟨p, fun k => speed * dir k⟩
 
 /-- The shot trajectory as a discrete stream: iterating the step method
 `n` times with fixed time step `dt`. `shoot step h s₀ dt 0 = s₀` and
 `shoot step h s₀ dt (n+1) = step h (shoot step h s₀ dt n) dt`. -/
-def shoot (step : StepMethod) (h : ℝ → ℝ → ℝ) (s₀ : ShotState) (dt : ℝ) :
+def shoot (step : StepMethod) (h : HeightFun) (s₀ : ShotState) (dt : ℝ) :
     ℕ → ShotState
   | 0 => s₀
   | (n + 1) => step h (shoot step h s₀ dt n) dt
@@ -207,7 +207,7 @@ abbrev rk4Trajectory (h : ℝ → ℝ → ℝ) (s₀ : ShotState) (dt : ℝ) (n 
 
 /-- The spatial point reached by a shot at step `n`: the lifted parameter
 position `graph h γₙ`, i.e. the bullet's position in `ℝ³`. -/
-def impactPoint (h : ℝ → ℝ → ℝ) (s : ShotState) : Vec3 :=
+def impactPoint (h : HeightFun) (s : ShotState) : Point3 :=
   graph h s.pos
 
 end Shoot
