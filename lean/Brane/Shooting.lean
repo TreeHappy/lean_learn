@@ -82,6 +82,37 @@ acceleration satisfies `γ̈ = geoAccel h γ γ̈`. -/
 def geoAccel (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) (v : Vel2) : Vel2 :=
   -((gramMatrix h p)⁻¹ *ᵥ (hessQuad h p v • gradientVec h p))
 
+/-! ### Exercises: the geodesic equation
+
+These are left as `sorry` exercises; see the derivation in
+`docs/shooting-method.md`. -/
+
+/-- **Exercise.** `geoAccel` solves the geodesic equation
+`G γ̈ + (vᵀ H v) ∇h = 0`, i.e. the parameter acceleration produced by
+`geoAccel` exactly cancels the Hessian-quotient term when run through the
+Gram matrix.
+
+Hints:
+* `IsUnit` / `Matrix.nonsing_inv_mul` for inverting `G` (its determinant is
+  `1 + |∇h|² ≥ 1`, so `G` is always invertible — see `DiffGeom.det_gramMatrix_eq`);
+* `DiffGeom.gramMatrix_eq_transpose_mul` to expand `G` through the tangents;
+* the definitions `hessQuad`, `gradientVec` are `rfl`-transparent. -/
+theorem geoAccel_solves_geodesic (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) (v : Vel2) :
+    gramMatrix h p *ᵥ geoAccel h p v + hessQuad h p v • gradientVec h p = 0 := by
+  sorry
+
+/-- **Exercise.** The vertical direction `e₃ = vec3 0 0 1` is *almost* the
+surface normal: `normal h p = cross (tangentX h p) (tangentY h p)` differs from
+`e₃` by the (horizontal) gradient of `h`:
+
+`e₃ = normal h p + gradient h p`.
+
+Hints: `DiffGeom.normal_eq`, `DiffGeom.gradient_eq`, `DiffGeom.vec3_add`,
+`DiffGeom.vec3_eq_zero_iff`. -/
+theorem e3_eq_normal_add_gradient (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) :
+    normal h p + gradient h p = vec3 0 0 1 := by
+  sorry
+
 /-! ## The state of a shot
 
 A shot is a second-order ODE, so its state is (position, velocity) in the

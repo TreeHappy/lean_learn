@@ -245,6 +245,194 @@ distortion → nearly straight UV path. Strong curvature along travel
 
 ---
 
+## 2.5 Where the formula comes from: differentiate twice
+
+The equation `(σ ∘ γ)'' = J γ̈ + (vᵀ H v) · e₃` is not an assumption — it is
+what falls out of the chain rule applied twice to `σ = graph h`. Here is the
+full derivation; every symbol it uses is a `def` in `DifferentialGeometry.lean`.
+
+### Step 0: write everything in coordinates
+
+The lift of the UV path is
+
+```text
+(σ ∘ γ)(t) = (γ₁(t), γ₂(t), h(γ₁(t), γ₂(t))).
+```
+
+That is literally `graph h (γ t)` (`DiffGeom.graph`): two components of the
+path are *just the parameter path itself*; only the third component involves
+`h`. Write `v = γ̇ = (v₀, v₁)` and abbreviate the partials at `γ(t)` as
+`∂ₓh, ∂ᵧh` and the second partials as `∂ₓₓh, ∂ₓᵧh, ∂ᵧₓh, ∂ᵧᵧh`.
+
+### Step 1: differentiate once — the velocity
+
+Differentiating componentwise with the chain rule:
+
+```text
+d/dt (σ ∘ γ) = ( γ̇₁, γ̇₂, ∂ₓh · γ̇₁ + ∂ᵧh · γ̇₂ ).
+```
+
+Notice the structure: the first two components are `γ̇` itself, and the third
+is the dot product `∇h · γ̇` — the rate of change of height along the travel
+direction, exactly what you'd compute from a height gradient in a shader.
+In matrix form this is `J γ̇`: the Jacobian `J = jacobian h p` has rows
+`(1, 0)`, `(0, 1)`, `(∂ₓh, ∂ᵧh)`, and
+
+```text
+J γ̇ = ( γ̇₁, γ̇₂, ∂ₓh · γ̇₁ + ∂ᵧh · γ̇₂ ).
+```
+
+(`DiffGeom.jacobian_mulVec` proves this product is the tangent combination
+`v₀ · tangentX + v₁ · tangentY` — the local-to-world transform of the UV
+velocity.)
+
+### Step 2: differentiate again — the acceleration
+
+Differentiate each component once more. The first two are trivial: `γ̈₁, γ̈₂`.
+The third uses the product rule plus the chain rule applied to the partials
+themselves (the partials `∂ₓh(γ(t)), ∂ᵧh(γ(t))` are themselves functions of
+`t`, so their rates of change are the Hessian rows dotted with the velocity):
+
+```text
+d²/dt² (σ ∘ γ) = ( γ̈₁, γ̈₂,  ∂ₓh · γ̈₁ + ∂ᵧh · γ̈₂
+                              + (v₀·∂ₓₓh + v₁·∂ᵧₓh) · v₀ + (v₀·∂ₓᵧh + v₁·∂ᵧᵧh) · v₁ ).
+```
+
+The parenthesis on the second line rearranges into the single number
+
+```text
+v₀·∂ₓₓh·v₀ + v₀·∂ₓᵧh·v₁ + v₁·∂ᵧₓh·v₀ + v₁·∂ᵧᵧh·v₁ = vᵀ H v,
+```
+
+which is `hessQuad h (γ t) v` — the Hessian quadratic form, i.e. how much the
+surface's slope changes *along the direction you are moving*.
+
+### Step 3: read off the matrix form
+
+Collect the terms that contain `γ̈` (the steering, i.e. the unknown) and the
+terms that do not (they depend only on position and velocity, i.e. knowns):
+
+```text
+(σ ∘ γ)'' = ( γ̈₁, γ̈₂, ∂ₓh·γ̈₁ + ∂ᵧh·γ̈₂ ) + ( 0, 0, vᵀ H v )
+          =        J γ̈              +      (vᵀ H v) · e₃ .
+```
+
+Done. In words: **the 3D acceleration is the Jacobian acting on the UV
+acceleration, plus a purely vertical correction** `vᵀHv · e₃` that says "the
+terrain is curving under you at rate `vᵀHv`". Nothing in this step used any
+property of `h` beyond twice-differentiability, and the whole computation is
+componentwise — no Christoffel symbols ever appear because the graph
+parametrization keeps them hidden inside `H`.
+
+## 2.6 From `e₃` to `∇h`: projecting onto the tangents
+
+The geodesic rule says `(σ ∘ γ)''` must have **no tangential part**: it must
+be parallel to `normal h p`. How do we test "no tangential part" without
+computing the normal component? Dot with the two mesh tangents — a vector
+parallel to the normal dots to zero against every tangent
+(`tangentX_inner_normal`, `tangentY_inner_normal`).
+
+Dot the two sides of Step 3 with `tangentX h p` (and identically with
+`tangentY h p`), using the three facts:
+
+1. **`⟪tangentX, J γ̈⟫ = (G γ̈)₀`.** The columns of `J` are `tangentX` and
+   `tangentY`, so `tangentX ⬝ (J w) = (JᵀJ w)₀ = (G w)₀` with
+   `G = JᵀJ = gramMatrix h p` (`gramMatrix_eq_transpose_mul`). This is the
+   Gram matrix doing its job: it converts "surface-space dot products" into
+   UV-space matrix entries.
+2. **`⟪tangentX, e₃⟫ = ∂ₓh`.** `e₃ = (0, 0, 1)` only has a third component,
+   and the third component of `tangentX` is exactly `∂ₓh`
+   (`tangentX_apply_two`). This is the step where the vertical correction
+   `(vᵀHv) e₃` *turns into* `(vᵀHv) ∇h`: dotting `e₃` with the two tangents
+   reads off the two partial slopes, i.e. the gradient.
+3. **`⟪tangentX, c · normal⟫ = 0`** for the geodesic's normal part, by
+   orthogonality.
+
+So the geodesic condition, dotted with both tangents, becomes the pair of
+scalar equations
+
+```text
+(G γ̈)₀ + (vᵀ H v) · ∂ₓh = 0        (G γ̈)₁ + (vᵀ H v) · ∂ᵧh = 0
+```
+
+— one matrix–vector equation:
+
+```text
+G γ̈ + (vᵀ H v) ∇h = 0.
+```
+
+This is precisely `γ̈ = geoAccel h (γ t) γ̇` once you multiply by `G⁻¹`. And
+`G` is always invertible: `det G = 1 + |∇h|² ≥ 1`
+(`det_gramMatrix_eq`), the same area-stretch factor as `‖normal‖²`
+(`det_gramMatrix`), so the solver never divides by zero.
+
+The Lean statement, waiting for its proof in `Shooting.lean`:
+
+```lean
+theorem geoAccel_solves_geodesic (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) (v : Vel2) :
+    gramMatrix h p *ᵥ geoAccel h p v + hessQuad h p v • gradientVec h p = 0 := by
+  sorry
+```
+
+**Exercise.** Prove it. Suggested route: `(gramMatrix h p).det = 1 + |∇h|² ≥ 1`
+gives `IsUnit` of the determinant; then `Matrix.nonsing_inv_mul` turns the
+goal into `G⁻¹ (G (geoAccel …) + …) = G⁻¹ 0`; unfold `geoAccel`, `hessQuad`,
+`gradientVec` (`rfl`-transparent defs) and finish with matrix algebra over
+`Fin 2`.
+
+## 2.7 Isn't `e₃` just the surface normal? (yes — almost)
+
+The real normal to the surface at `p` is the cross product of the tangents,
+and that is literally how `DiffGeom.normal` is defined:
+
+```lean
+def normal (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) : Vec3 :=
+  cross (tangentX h p) (tangentY h p)
+```
+
+Crossing `(1, 0, ∂ₓh)` with `(0, 1, ∂ᵧh)` gives
+(`normal_eq`, `cross_coordinates`):
+
+```text
+normal h p = (−∂ₓh, −∂ᵧh, 1) = e₃ − (∂ₓh, ∂ᵧh, 0) = e₃ − gradient h p.
+```
+
+So:
+
+> [!NOTE]
+> **`e₃` vs the normal.** `e₃ = normal h p + gradient h p`: the vertical
+> direction is the surface normal *plus a horizontal correction* equal to the
+> parameter gradient of `h`. They coincide exactly on flat spots
+> (`∇h = 0`), and otherwise they span the same line up to that horizontal
+> shear. This is stated as a Lean exercise:
+>
+> ```lean
+> theorem e3_eq_normal_add_gradient (h : ℝ → ℝ → ℝ) (p : ℝ × ℝ) :
+>     normal h p + gradient h p = vec3 0 0 1 := by
+>   sorry
+> ```
+
+Why doesn't §2.6 just use the true normal instead of `e₃`, then? Two reasons,
+one practical and one conceptual:
+
+- **Practical.** The unknown in the geodesic equation is only the *tangential
+  part* of `(σ ∘ γ)''`. Dotting with the tangents is the standard way to
+  extract the tangential part, and against the tangents the normal contributes
+  nothing while `e₃` contributes exactly `∇h` — the correction term of the
+  matrix equation. Using `e₃` first and projecting is what *produces* the
+  `∇h` term; had we decomposed against the normal directly, the same `∇h`
+  would reappear as soon as we re-expanded the normal component in UV
+  coordinates.
+- **Conceptual.** `e₃` is a *fixed ambient direction* (the height axis of the
+  heightmap), while `normal h p` is a field over the surface. Writing the
+  acceleration as `J γ̈ + (vᵀHv) e₃` keeps the formula in terms of one constant
+  direction plus matrices, which is what makes the whole thing "one dot
+  product and one matrix–vector product". The conversion
+  `e₃ = normal + gradient` is the bridge between the ambient picture (§2.5)
+  and the intrinsic picture (§2.6).
+
+---
+
 ## 3. Shooting = "fire and integrate"
 
 Like ballistic prediction in a game: pick a muzzle position and direction,
