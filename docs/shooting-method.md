@@ -22,11 +22,12 @@ other object of the theory is built from it. Here are the ingredients, each
 defined explicitly, with the exact Lean names.
 
 > [!NOTE]
-> **Definition (`h`, the height function).** The **height function** is
-> `h : HeightFun`, i.e. `h : ℝ → ℝ → ℝ`; it assigns to each point `(x, y)` of the plane a real
-> number: the height of the surface above it. There is no `def` for `h`
-> itself — it is the abstract input of the whole theory, a free variable of
-> type `ℝ → ℝ → ℝ` that every other definition takes as its first argument:
+> **Definition (`h`, the height function).** The **height function** is a
+> value of type `HeightFun` — a function `ℝ → ℝ → ℝ` that assigns to each
+> point `(x, y)` of the plane a real number: the height of the surface above
+> it. There is no `def` for `h` itself — it is the abstract input of the
+> whole theory, a free variable of type `HeightFun` that every other
+> definition takes as its first argument:
 >
 > ```lean
 > -- the type of the height function: two coordinates in, one height out
