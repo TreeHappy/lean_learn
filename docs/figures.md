@@ -21,19 +21,27 @@ The three Lean modules involved:
 | File | Role |
 |---|---|
 | `lean/Brane/Figures/Basic.lean` | the Catppuccin **Latte** palette (per the [Catppuccin style guide](https://github.com/catppuccin/catppuccin/blob/main/docs/style-guide.md)), `Prim` shorthands (`primLine`, `primPolygon`, `primArrow`, `primText`, …), and the oblique 3D→2D projection |
-| `lean/Brane/Figures/Numeric.lean` | a computable `Float` mirror of the geodesic pipeline |
 | `lean/Brane/Figures/ShootingFigures.lean` | the nine figure builders |
 | `lean/Brane/Figures/Gen.lean` | SVG serialization and the `gen-figures` executable |
 
-### Why a Float mirror?
+### The same definitions run the figures
 
-The mathematical definitions (`DiffGeom.partialX`, `Shoot.geoAccel`,
-`Shoot.shoot`, …) live over `ℝ` — they use Mathlib's `deriv` and sit in a
-`noncomputable section`, so they cannot run at runtime. `Numeric.lean`
-re-implements *the same formulas* over `Float` (central differences for the
-partials, the same Gram-matrix equation, the same Euler/RK4 steppers), with
-each definition citing its noncomputable counterpart. The figures are
-therefore genuinely *computed from the mathematics the document describes*:
+The pipeline in `Shooting.lean` is *polymorphic in the number type*: every
+definition (`partialX`, `geoAccel`, `field`, `eulerStep`, `rk4Step`,
+`shoot`, …) is quantified over a `GeoKernel` class — the six partial
+derivatives of a height function plus the handful of numerals the formulas
+need. There are two instances:
+
+- `K = ℝ` — the partials are Mathlib's `deriv` (the mathematical definition,
+  via `DiffGeom.partialX`, …). This instance is `noncomputable`; the proofs
+  live here.
+- `K = Float` — the partials are central finite differences. This instance
+  is computable, and `lake exe gen-figures` runs the pipeline through it.
+
+So there is no "mirror" module: `shootPositions rk4Step bowlHeight …` in
+`ShootingFigures.lean` is literally the `shoot`, `rk4Step` and `bowlHeight`
+the document quotes, instantiated at `Float`. The figures are genuinely
+*computed from the mathematics the document describes*:
 
 - `tangents.svg`, `normal.svg` — `tangentX` / `tangentY` / `normal`
   evaluated numerically at a point of the bowl;

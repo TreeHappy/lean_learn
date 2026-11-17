@@ -109,9 +109,12 @@ Last updated: 2026-11-15.
 
 - Toolchain downgraded to Lean/Mathlib v4.34.0; vendored Vizagrams
   (`lean/Vizagrams/`, upstream 68931c4, one Mathlib-import patch).
-- `lean/Brane/Figures/{Basic,Numeric,ShootingFigures,Gen}.lean` +
+- `lean/Brane/Figures/{Basic,ShootingFigures,Gen}.lean` +
   `lake exe gen-figures` (`make figures`) generate all `docs/figures/*.svg`
-  (Catppuccin Latte) — trajectories computed with Float mirrors of
-  `Shoot.eulerStep`/`rk4Step` on `bowlHeight`. Docs: `docs/figures.md`.
+  (Catppuccin Latte) — computed by the *actual* pipeline: `Shooting.lean` is
+  polymorphic over a `GeoKernel` number-type class (ℝ via Mathlib `deriv`,
+  Float via central differences), so the figures run the very
+  `Shoot.shoot`/`eulerStep`/`rk4Step`/`bowlHeight` the docs cite. The old
+  Float mirror `Figures/Numeric.lean` is deleted. Docs: `docs/figures.md`.
 - Replaced the old Node generator `docs/figures/gen-figures.mjs`.
 - Not yet re-verified: the `notes/` Verso build on v4.34.0.

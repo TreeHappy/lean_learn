@@ -48,20 +48,23 @@ defined explicitly, with the exact Lean names.
 >
 > ```lean
 > /-- A plane with slopes `a` and `b` and height `c` at the origin. -/
-> def planeHeight (a b c : ℝ) (x y : ℝ) : ℝ :=
+> def planeHeight {K : Type} [Mul K] [Add K] (a b c : K) (x y : K) : K :=
 >   a * x + b * y + c
 >
 > /-- The paraboloid `z = x² + y²`. -/
-> def bowlHeight (x y : ℝ) : ℝ :=
->   x ^ 2 + y ^ 2
+> def bowlHeight {K : Type} [Mul K] [Add K] (x y : K) : K :=
+>   x * x + y * y
 >
 > /-- The saddle `z = x² - y²`. -/
-> def saddleHeight (x y : ℝ) : ℝ :=
->   x ^ 2 - y ^ 2
+> def saddleHeight {K : Type} [Mul K] [Add K] [Sub K] (x y : K) : K :=
+>   x * x - y * y
 > ```
 >
 > (`DiffGeom.planeHeight`, `DiffGeom.bowlHeight`, `DiffGeom.saddleHeight`
-> are the worked examples proved in `DifferentialGeometry.lean`.)
+> are the worked examples proved in `DifferentialGeometry.lean`.) They are
+> polymorphic in the number type `K`: the theory instantiates them at `ℝ`,
+> and the figure generator (`lake exe gen-figures`) at `Float` — see
+> `docs/figures.md` for why.
 >
 > What Lean *does* define for every `h` are the derivatives, as one-variable
 > derivatives:
@@ -382,12 +385,28 @@ G γ̈ + (vᵀ H v) ∇h = 0
 
 with `G = Jᵀ J` the Gram matrix (`gramMatrix_eq_transpose_mul` proves
 exactly this in Lean: `gramMatrix h p = (jacobian h p)ᵀ * jacobian h p`)
-and `∇h = (∂ₓh, ∂ᵧh)`. Solve for `γ̈` by multiplying with `G⁻¹`:
+and `∇h = (∂ₓh, ∂ᵧh)`. Solve for `γ̈` by multiplying with `G⁻¹`. The three
+independent entries of `G` are bundled as `gramEntries h p =
+(g₁₁, g₁₂, g₂₂) = (1 + (∂ₓh)², ∂ₓh ∂ᵧh, 1 + (∂ᵧh)²)` — for `K = ℝ` exactly
+the entries of `DiffGeom.gramMatrix` (`gramEntries_eq`), and
+`det G = 1 + |∇h|² ≥ 1` (`det_gramMatrix_eq`), so the solve never divides
+by zero:
 
 ```lean
-def geoAccel (h : HeightFun) (p : Point2) (v : Vel2) : Accel2 :=
-  -((gramMatrix h p)⁻¹ *ᵥ (hessQuad h p v • gradientVec h p))
+/-- The geodesic acceleration in parameter space, i.e. the solution of the
+Gram system `g γ̈ + (hessQuad h p v) • gradientVec h p = 0`, written in
+closed form: `γ̈ = -g⁻¹ m` with the 2×2 inverse applied entrywise. -/
+def geoAccel (h : K → K → K) (p : K × K) (v : Fin 2 → K) : Fin 2 → K :=
+  let (g11, g12, g22) := gramEntries h p
+  let det := g11 * g22 - g12 * g12
+  let k := hessQuad h p v
+  let (m₁, m₂) := (k * partialX h p.1 p.2, k * partialY h p.1 p.2)
+  ![-(g22 * m₁ - g12 * m₂) / det, -(-(g12 * m₁) + g11 * m₂) / det]
 ```
+
+For `K = ℝ` this is exactly the matrix expression
+`-((gramMatrix h p)⁻¹ *ᵥ (hessQuad h p v • gradientVec h p))`
+(the bridge theorem `geoAccel_eq_matrix` in `Shooting.lean`).
 
 That is the *entire* geodesic equation: one dot product, one scalar-times-
 vector, one matrix–vector product. No Christoffel symbols, no index tensors —
@@ -398,13 +417,15 @@ The two building blocks, verbatim from `Shooting.lean`:
 ```lean
 /-- The parameter gradient of `h`: the vector `(∂₀h, ∂₁h) = (partialX, partialY)`,
 written with the `![·, ·]` vector literal. -/
-def gradientVec (h : HeightFun) (p : Point2) : Vel2 :=
+def gradientVec (h : K → K → K) (p : K × K) : Fin 2 → K :=
   ![partialX h p.1 p.2, partialY h p.1 p.2]
 
-/-- The Hessian quadratic form `vᵀ H v`: the second derivative of `h` along
-the parameter velocity `v`, as a dot product `v ⬝ᵥ (H · v)`. -/
-def hessQuad (h : HeightFun) (p : Point2) (v : Vel2) : ℝ :=
-  v ⬝ᵥ (hessian h p *ᵥ v)
+/-- The Hessian quadratic form `γ̇ᵀ H γ̇`: the second derivative of `h` along
+the parameter velocity `v`, written coordinatewise (for `K = ℝ` this is
+`v ⬝ᵥ (H *ᵥ v)`, by `hessQuad_eq`). -/
+def hessQuad (h : K → K → K) (p : K × K) (v : Fin 2 → K) : K :=
+  v 0 * (partialXX h p.1 p.2 * v 0 + partialXY h p.1 p.2 * v 1)
+    + v 1 * (partialYX h p.1 p.2 * v 0 + partialYY h p.1 p.2 * v 1)
 ```
 
 Symbol by symbol:
@@ -715,6 +736,18 @@ direction, then integrate the ODE with a fixed time step and watch where the
 trajectory ends up. Everything in this section is a plain definition in
 `Shooting.lean` — no proofs yet, by design.
 
+> [!NOTE]
+> **The number type is abstract.** Every definition in this section is
+> polymorphic in the number type `K`, quantified over the `GeoKernel K`
+> class: the six partial derivatives of a height function (`partialX`,
+> `partialY`, `partialXX`, `partialXY`, `partialYX`, `partialYY`) plus the
+> numerals (`zero`, `one`, `two`, `six`) the formulas need. Over `ℝ` the
+> kernel is Mathlib's `deriv` — i.e. exactly the `DiffGeom.partial*` of §1;
+> over `Float` it is central finite differences, and that computable
+> instance is what the figure generator executes. The numerals appear in
+> `rk4Step` as `two` / `six` (class fields, since a generic `K` cannot
+> auto-generalize numeric literals).
+
 ### The state
 
 The state of a second-order ODE is a position plus a velocity: the
@@ -723,12 +756,12 @@ forward you must carry both. Here everything lives in the parameter plane:
 
 ```lean
 /-- The state of a shot: parameter position and parameter velocity. -/
-structure ShotState where
-  pos : Point2
-  vel : Vel2   -- = Fin 2 → ℝ; components are `vel 0` and `vel 1`, i.e. (v₀, v₁)
+structure ShotState (K : Type) where
+  pos : K × K
+  vel : Fin 2 → K   -- components are `vel 0` and `vel 1`, i.e. (v₀, v₁)
 ```
 
-It has coordinatewise `Add`, `SMul ℝ` and `Zero` instances
+It has coordinatewise `Add`, `SMul K` and `Zero` instances
 (`addShotState`, `smulShotState`, `zeroShotState`) — the vector-space
 structure that symmetric one-step integrators need to be expressible.
 
@@ -739,7 +772,7 @@ position's derivative is the velocity, and the velocity's derivative is the
 geodesic acceleration `geoAccel`:
 
 ```lean
-def field (h : HeightFun) (s : ShotState) : ShotState :=
+def field (h : K → K → K) (s : ShotState K) : ShotState K :=
   ⟨(s.vel 0, s.vel 1), geoAccel h s.pos s.vel⟩
 ```
 
@@ -750,7 +783,7 @@ It does not depend on time, so every integrator just reads `field h s`.
 ```lean
 /-- A one-step method: given the surface `h`, the current state and the
 time step, produce the next state. -/
-abbrev StepMethod := HeightFun → ShotState → ℝ → ShotState
+abbrev StepMethod (K : Type) := (K → K → K) → ShotState K → K → ShotState K
 ```
 
 This is the function type shared by every integrator in the file: Euler and
@@ -763,7 +796,7 @@ The simplest integrator there is — sample the slope once, march straight,
 repeat:
 
 ```lean
-def eulerStep : StepMethod := fun h s dt => s + dt • field h s
+def eulerStep : StepMethod K := fun h s dt => s + dt • field h s
 ```
 
 Its drawback: it undershoots on curves (each step cuts the corner of
@@ -779,17 +812,15 @@ start (`k₁`), two midpoint probes (`k₂, k₃`), slope at the end (`k₄`),
 then a 1–2–2–1 weighted average:
 
 ```lean
-def rk4Increments (h : HeightFun) (s : ShotState) (dt : ℝ) :
-    ShotState × ShotState × ShotState × ShotState :=
+/-- One classical Runge–Kutta 4 step:
+`sₙ₊₁ = sₙ + Δt/6 · (k₁ + 2k₂ + 2k₃ + k₄)`, where `k₁` is the slope at the
+start, `k₂, k₃` the two midpoint probes and `k₄` the slope at the end. -/
+def rk4Step : StepMethod K := fun h s dt =>
   let k₁ := field h s
-  let k₂ := field h (s + (dt / 2) • k₁)
-  let k₃ := field h (s + (dt / 2) • k₂)
+  let k₂ := field h (s + (dt / two) • k₁)
+  let k₃ := field h (s + (dt / two) • k₂)
   let k₄ := field h (s + dt • k₃)
-  ⟨k₁, k₂, k₃, k₄⟩
-
-def rk4Step : StepMethod := fun h s dt =>
-  let ⟨k₁, k₂, k₃, k₄⟩ := rk4Increments h s dt
-  s + (dt / 6) • (k₁ + (2 : ℝ) • k₂ + (2 : ℝ) • k₃ + k₄)
+  s + (dt / six) • (k₁ + two • k₂ + two • k₃ + k₄)
 ```
 
 Euler is first-order accurate (error per step ∝ `dt²`), RK4 is fourth-order
@@ -803,8 +834,8 @@ accuracy, and it is the classical workhorse of numerical ODE solving.
 The trajectory is just iteration of the chosen stepper — a recursion on `n`:
 
 ```lean
-def shoot (step : StepMethod) (h : HeightFun) (s₀ : ShotState) (dt : ℝ) :
-    ℕ → ShotState
+def shoot (step : StepMethod K) (h : K → K → K) (s₀ : ShotState K) (dt : K) :
+    ℕ → ShotState K
   | 0 => s₀
   | (n + 1) => step h (shoot step h s₀ dt n) dt
 ```
@@ -813,8 +844,8 @@ i.e. `shoot step h s₀ dt 0 = s₀` (the initial state) and each step applies
 `step h · dt` to the previous state. Two named convenience wrappers:
 
 ```lean
-abbrev eulerTrajectory (h) (s₀) (dt) (n) : ShotState := shoot eulerStep h s₀ dt n
-abbrev rk4Trajectory   (h) (s₀) (dt) (n) : ShotState := shoot rk4Step   h s₀ dt n
+abbrev eulerTrajectory (h) (s₀) (dt) (n) : ShotState K := shoot eulerStep h s₀ dt n
+abbrev rk4Trajectory   (h) (s₀) (dt) (n) : ShotState K := shoot rk4Step   h s₀ dt n
 ```
 
 Because both go through the same `shoot`, any future theorem about
