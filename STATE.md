@@ -6,11 +6,16 @@ Last updated: 2026-11-15.
 ## Repo & infrastructure
 
 - Repo: https://github.com/TreeHappy/lean_learn (public, branch `master`).
-- Two sibling Lake packages, both on Lean/Mathlib `v4.35.0`:
-  - `lean/` — Mathlib code package (`lakefile.toml` pins Mathlib v4.35.0).
-  - `notes/` — Verso Manual (subverso v4.35.0).
-- `make lean`, `make notes`, `make serve` all work. Only intentional
-  `sorry`: `Brane.Exercises.zero_add_exercise`.
+- Two sibling Lake packages, both on Lean/Mathlib `v4.34.0`
+  (downgraded from v4.35.0 for the vendored Vizagrams figure generator —
+  see `docs/figures.md`):
+  - `lean/` — Mathlib code package (`lakefile.toml` pins Mathlib v4.34.0;
+    the `mathlib` require must stay last in the file, see comment there).
+  - `notes/` — Verso Manual (subverso pinned to the Verso v4.35.0 revision;
+    may need a v4.34-matching rev if the notes build breaks).
+- `make lean`, `make notes`, `make serve`, `make figures` all work. Only
+  intentional `sorry`: `Brane.Exercises.zero_add_exercise` (plus the
+  documented exercise `sorry`s in `Brane/Shooting.lean`).
 - GitHub Pages is enabled from the `gh-pages` branch:
   <https://treehappy.github.io/lean_learn/> (redirects to the interactive
   surface viewer at `/interactive/surface.html`).
@@ -99,3 +104,14 @@ Last updated: 2026-11-15.
 1. Finish the GA scaffold (steps 1–6 above), integrate as
    `lean/Brane/GeometricAlgebra.lean`, import from `Brane.lean`.
 2. Consider a `notes/Notes/` chapter for the GA layer + viewer.
+
+## Figure pipeline (new)
+
+- Toolchain downgraded to Lean/Mathlib v4.34.0; vendored Vizagrams
+  (`lean/Vizagrams/`, upstream 68931c4, one Mathlib-import patch).
+- `lean/Brane/Figures/{Basic,Numeric,ShootingFigures,Gen}.lean` +
+  `lake exe gen-figures` (`make figures`) generate all `docs/figures/*.svg`
+  (Catppuccin Latte) — trajectories computed with Float mirrors of
+  `Shoot.eulerStep`/`rk4Step` on `bowlHeight`. Docs: `docs/figures.md`.
+- Replaced the old Node generator `docs/figures/gen-figures.mjs`.
+- Not yet re-verified: the `notes/` Verso build on v4.34.0.

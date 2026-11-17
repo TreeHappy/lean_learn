@@ -1,11 +1,16 @@
 LAKE ?= $(HOME)/.elan/bin/lake
 
-.PHONY: all lean notes serve clean
+.PHONY: all lean notes serve figures clean
 
 all: lean notes
 
 lean:
 	cd lean && $(LAKE) build
+
+# Regenerate the SVG figures in docs/figures from the Lean sources
+# (Brane.Figures.*, rendered with the vendored Vizagrams library).
+figures:
+	cd lean && $(LAKE) exe gen-figures
 
 notes:
 	cd notes && $(LAKE) exe notes

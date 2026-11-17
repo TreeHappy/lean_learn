@@ -6,13 +6,7 @@ defaultTargets = ["Brane"]
 [leanOptions]
 pp.unicode.fun = true # pretty-prints `fun a ↦ b`
 relaxedAutoImplicit = false
-weak.linter.mathlibStandardSet = true
 maxSynthPendingDepth = 3
-
-[[require]]
-name = "mathlib"
-scope = "leanprover-community"
-rev = "v4.35.0"
 
 # Verso loads highlighted code from this package. The extractor and the
 # `highlighted` facet come from subverso, pinned to the revision used by
@@ -22,5 +16,28 @@ name = "subverso"
 git = "https://github.com/leanprover/subverso"
 rev = "892d6dc520270b5fb8c1291dd1b131e8c16255ed"
 
+# Mathlib must be required LAST in this file: Vizagrams (above) pulls in
+# ProofWidgets, whose own mathlib pin must not override ours.
+[[require]]
+name = "mathlib"
+scope = "leanprover-community"
+rev = "v4.34.0"
+
 [[lean_lib]]
 name = "Brane"
+
+# Vizagrams, vendored from https://github.com/arademaker/vizagrams
+# (Apache-2.0, see Vizagrams-LICENSE). Pinned to upstream commit 68931c4
+# with one patch: `Mathlib.Data.Matrix.Notation` was renamed upstream to
+# `Mathlib.LinearAlgebra.Matrix.Notation` (Vizagrams/LinearAlgebra.lean).
+# Vendored because upstream pins Mathlib master and does not build against
+# the v4.34.0 release this project uses.
+[[lean_lib]]
+name = "Vizagrams"
+
+# Figure generator: writes the SVGs referenced by docs/shooting-method.md
+# into docs/figures/. Run from this directory: lake exe gen-figures
+# (or `make figures` from the repository root).
+[[lean_exe]]
+name = "gen-figures"
+root = "Brane.Figures.Gen"

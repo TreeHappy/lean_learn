@@ -1,28 +1,19 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 260" font-family="sans-serif" font-size="14">
-
-  <g font-size="13">
-  <path d="M 60 190 Q 360 60 660 60" fill="none" stroke="#6c7086" stroke-width="6" opacity="0.45"/>
-  <path d="M 90 177 Q 280 105 420 81" fill="none" stroke="#f38ba8" stroke-width="3"/>
-  <circle cx="90" cy="177" r="5" fill="#f38ba8"/>
-  <circle cx="420" cy="81" r="5" fill="#f38ba8"/>
-  <g stroke-linecap="round">
-    <g stroke="#89b4fa" stroke-width="3" fill="#89b4fa">
-      <line x1="90" y1="177" x2="152" y2="150"/><polygon points="158,147 147,158 143,148"/>
-    </g>
-    <text x="40" y="215" fill="#89b4fa">k₁ = field h s   (start)</text>
-    <g stroke="#a6e3a1" stroke-width="3" fill="#a6e3a1">
-      <line x1="267" y1="117" x2="329" y2="101"/><polygon points="335,98 324,107 320,97"/>
-    </g>
-    <text x="215" y="225" fill="#a6e3a1">k₂ = field h (s + (dt/2) k₁)</text>
-    <g stroke="#f9e2af" stroke-width="3" fill="#f9e2af">
-      <line x1="285" y1="111" x2="350" y2="93"/><polygon points="356,90 345,99 341,89"/>
-    </g>
-    <text x="300" y="70" fill="#f9e2af">k₃ = field h (s + (dt/2) k₂)</text>
-    <g stroke="#cba6f7" stroke-width="3" fill="#cba6f7">
-      <line x1="420" y1="81" x2="486" y2="64"/><polygon points="492,62 481,70 477,60"/>
-    </g>
-    <text x="450" y="110" fill="#cba6f7">k₄ = field h (s + dt k₃)   (end)</text>
-  </g>
-  <text x="360" y="250" text-anchor="middle" fill="#a6adc8">rk4Step: sₙ₊₁ = s + (dt/6)(k₁ + 2k₂ + 2k₃ + k₄) — the step lands on the true path (grey)</text>
-  </g>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 260" font-family="sans-serif">
+<rect x="0" y="0" width="720" height="260" fill="#eff1f5"/>
+<polyline points="217.403499,161.277330 199.059859,162.482562 178.638363,164.348626 155.369647,167.258960 128,172" fill="none" stroke="rgb(23,146,153)" stroke-width="3"/>
+<circle cx="128" cy="172" r="4.500000" fill="rgb(254,100,11)"/>
+<line x1="128" y1="172" x2="147.821025" y2="165.062641" stroke="rgb(223,142,29)" stroke-width="2"/>
+<polygon points="156.315751,162.089487 146.169273,160.343349 149.472778,169.781933" fill="rgb(223,142,29)"/>
+<line x1="155.369647" y1="167.258960" x2="171.380165" y2="163.269814" stroke="rgb(64,160,43)" stroke-width="4"/>
+<polygon points="184.479681,160.005968 169.627359,156.234889 173.132972,170.304739" fill="rgb(64,160,43)"/>
+<line x1="178.638363" y1="164.348626" x2="194.871572" y2="161.393474" stroke="rgb(23,146,153)" stroke-width="4"/>
+<polygon points="208.153288,158.975622 193.573096,154.260700 196.170048,168.526248" fill="rgb(23,146,153)"/>
+<line x1="199.059859" y1="162.482562" x2="219.877846" y2="159.723682" stroke="rgb(30,102,245)" stroke-width="2"/>
+<polygon points="228.799841,158.541304 219.220970,154.767018 220.534722,164.680345" fill="rgb(30,102,245)"/>
+<text x="108" y="142" font-size="13" text-anchor="middle">k₁ (×1)</text>
+<text x="135.369647" y="137.258960" font-size="13" text-anchor="middle">k₂ (×2)</text>
+<text x="158.638363" y="134.348626" font-size="13" text-anchor="middle">k₃ (×2)</text>
+<text x="179.059859" y="187.482562" font-size="13" text-anchor="middle">k₄ (×1)</text>
+<text x="370" y="232" font-size="13" text-anchor="middle">one rk4Step: slope probes averaged 1:2:2:1</text>
+<circle cx="217.403499" cy="161.277330" r="4.500000" fill="rgb(210,15,57)"/>
 </svg>

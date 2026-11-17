@@ -1,18 +1,13 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 300" font-family="sans-serif" font-size="14">
-
-  <polygon points="60,230 360,230 500,110 200,110" fill="#94e2d5" fill-opacity="0.15" stroke="#94e2d5" stroke-width="2"/>
-  <path d="M 110 215 Q 260 150 430 140" fill="none" stroke="#f38ba8" stroke-width="3"/>
-  <circle cx="233" cy="172" r="6" fill="#fab387"/>
-  <g stroke="#89b4fa" stroke-width="3" fill="#89b4fa">
-    <line x1="233" y1="172" x2="308" y2="151"/>
-    <polygon points="314,150 303,159 298,149"/>
-  </g>
-  <text x="322" y="148" fill="#89b4fa">velocity v (in the surface)</text>
-  <g stroke="#cba6f7" stroke-width="3" fill="#cba6f7">
-    <line x1="233" y1="172" x2="255" y2="112"/>
-    <polygon points="259,109 258,124 250,120"/>
-  </g>
-  <text x="270" y="92" fill="#cba6f7">acceleration ⟂ surface (along normal)</text>
-  <text x="360" y="270" text-anchor="middle" fill="#a6adc8">the rule: the 3D acceleration of graph h γ(t) may only point along normal h γ(t)</text>
-  <text x="360" y="290" text-anchor="middle" fill="#6c7086" font-size="12">projected into UV space this is exactly γ̈ = -(G⁻¹ ((vᵀ H v) ∇h))</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 270" font-family="sans-serif">
+<rect x="0" y="0" width="560" height="270" fill="#eff1f5"/>
+<polygon points="60,50 360,50 500,160 200,160" fill="rgb(207,227,231)" stroke="rgb(23,146,153)" stroke-width="2"/>
+<polyline points="110,65 120.193750,63.700000 130.275000,62.550000 140.243750,61.550000 150.100000,60.700000 159.843750,60 169.475000,59.450000 178.993750,59.050000 188.400000,58.800000 197.693750,58.700000 206.875000,58.750000 215.943750,58.950000 224.900000,59.300000 233.743750,59.800000 242.475000,60.450000 251.093750,61.250000 259.600000,62.200000 267.993750,63.300000 276.275000,64.550000 284.443750,65.950000 292.500000,67.500000 300.443750,69.200000 308.275000,71.050000 315.993750,73.050000 323.600000,75.200000 331.093750,77.500000 338.475000,79.950000 345.743750,82.550000 352.900000,85.300000 359.943750,88.200000 366.875000,91.250000 373.693750,94.450000 380.400000,97.800000 386.993750,101.300000 393.475000,104.950000 399.843750,108.750000 406.100000,112.700000 412.243750,116.800000 418.275000,121.050000 424.193750,125.450000 430,130" fill="none" stroke="rgb(210,15,57)" stroke-width="3"/>
+<circle cx="430" cy="130" r="6" fill="rgb(254,100,11)"/>
+<line x1="430" y1="130" x2="493.405181" y2="146.908048" stroke="rgb(30,102,245)" stroke-width="3"/>
+<polygon points="505,150 495.079988,140.627521 491.730373,153.188575" fill="rgb(30,102,245)"/>
+<line x1="430" y1="130" x2="447.868944" y2="81.266516" stroke="rgb(136,57,239)" stroke-width="3"/>
+<polygon points="452,70 441.766248,79.028861 453.971640,83.504171" fill="rgb(136,57,239)"/>
+<text x="520" y="158" font-size="13" text-anchor="middle">velocity v (in the surface)</text>
+<text x="466" y="56" font-size="13" text-anchor="middle">acceleration ⟂ surface (along normal)</text>
+<text x="300" y="30" font-size="13" text-anchor="middle">a geodesic: the 3D acceleration is purely normal</text>
 </svg>
