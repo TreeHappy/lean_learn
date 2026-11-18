@@ -326,15 +326,15 @@ no *turning* force, only the surface curving under your feet.
 
 ### Derivation of the geodesic equation
 
-Let `γ(t) ∈ ℝ²` be a parameter curve, `v = γ̇`, `a = γ̈`, `σ = graph h`, `p = γ(t)`.
+Let `γ(t) ∈ ℝ²` be a parameter curve, `v = dγ/dt`, `a = d²γ/dt²`, `σ = graph h`, `p = γ(t)`.
 
 **Proposition.** For the lifted curve `σ ∘ γ`,
 ```text
-(σ ∘ γ)'' = J a + (vᵀ H v) e₃,
+(d²/dt²)(σ ∘ γ) = J a + (vᵀ H v) e₃,
 ```
 and, when `σ ∘ γ` is a geodesic,
 ```text
-0 = Jᵀ (σ ∘ γ)'' = G a + (vᵀ H v) ∇h,
+0 = Jᵀ (d²/dt²)(σ ∘ γ) = G a + (vᵀ H v) ∇h,
 ```
 hence `a = -G⁻¹ (vᵀ H v) ∇h = geoAccel(h, p, v)`.
 
@@ -343,15 +343,15 @@ hence `a = -G⁻¹ (vᵀ H v) ∇h = geoAccel(h, p, v)`.
 1. **Lift.** `(σ ∘ γ)(t) = (γ₁(t), γ₂(t), h(γ(t)))` (`DiffGeom.graph`).
 2. **First derivative.** By the chain rule,
    ```text
-   (σ ∘ γ)' = (v₁, v₂, ∂ₓh · v₁ + ∂ᵧh · v₂) = J v,
+   (d/dt)(σ ∘ γ) = (v₁, v₂, ∂ₓh · v₁ + ∂ᵧh · v₂) = J v,
    ```
    with `J = jacobian h p = [[1, 0], [0, 1], [∂ₓh, ∂ᵧh]]` (`DiffGeom.jacobian`, `DiffGeom.jacobian_mulVec`).
 3. **Second derivative.** Differentiating componentwise (product and chain rule on `∂ᵢh ∘ γ`) yields
    ```text
-   (σ ∘ γ)'' = (a₁, a₂, ∂ₓh · a₁ + ∂ᵧh · a₂ + vᵀ H v) = J a + (vᵀ H v) e₃,
+   (d²/dt²)(σ ∘ γ) = (a₁, a₂, ∂ₓh · a₁ + ∂ᵧh · a₂ + vᵀ H v) = J a + (vᵀ H v) e₃,
    ```
    where `H = [[∂ₓₓh, ∂ₓᵧh], [∂ᵧₓh, ∂ᵧᵧh]]`, `e₃ = (0, 0, 1)`, and `vᵀ H v = v₀² ∂ₓₓh + v₀ v₁ (∂ₓᵧh + ∂ᵧₓh) + v₁² ∂ᵧᵧh` (`DiffGeom.hessian`, `Shoot.hessQuad`).
-4. **Tangential projection.** A geodesic satisfies `(σ ∘ γ)'' ⟂ TₚΣ`, i.e. `⟪(σ ∘ γ)'', ∂ₓσ⟫ = ⟪(σ ∘ γ)'', ∂ᵧσ⟫ = 0`, equivalently `Jᵀ (σ ∘ γ)'' = 0`. With `Jᵀ J = G` (`DiffGeom.gramMatrix_eq_transpose_mul`) and `Jᵀ e₃ = ∇h` (since `⟪∂ₓσ, e₃⟫ = ∂ₓh`, `⟪∂ᵧσ, e₃⟫ = ∂ᵧh`),
+4. **Tangential projection.** A geodesic satisfies `(d²/dt²)(σ ∘ γ) ⟂ TₚΣ`, i.e. `⟪(d²/dt²)(σ ∘ γ), ∂ₓσ⟫ = ⟪(d²/dt²)(σ ∘ γ), ∂ᵧσ⟫ = 0`, equivalently `Jᵀ (d²/dt²)(σ ∘ γ) = 0`. With `Jᵀ J = G` (`DiffGeom.gramMatrix_eq_transpose_mul`) and `Jᵀ e₃ = ∇h` (since `⟪∂ₓσ, e₃⟫ = ∂ₓh`, `⟪∂ᵧσ, e₃⟫ = ∂ᵧh`),
    ```text
    0 = Jᵀ (J a + (vᵀ H v) e₃) = G a + (vᵀ H v) ∇h.
    ```
@@ -465,7 +465,7 @@ theorem e3_eq_normal_add_gradient (h : HeightFun) (p : Point2) :
   sorry
 ```
 
-Thus `e₃ = n + ∇h`: `e₃` differs from `n` by a horizontal vector in `TₚΣ`, with equality iff `∇h = 0`. The decomposition `(σ ∘ γ)'' = J a + (vᵀ H v) e₃` uses the fixed ambient direction `e₃`; tangential projection annihilates the normal component and maps `e₃` to `∇h`, yielding `G a + (vᵀ H v) ∇h = 0`.
+Thus `e₃ = n + ∇h`: `e₃` differs from `n` by a horizontal vector in `TₚΣ`, with equality iff `∇h = 0`. The decomposition `(d²/dt²)(σ ∘ γ) = J a + (vᵀ H v) e₃` uses the fixed ambient direction `e₃`; tangential projection annihilates the normal component and maps `e₃` to `∇h`, yielding `G a + (vᵀ H v) ∇h = 0`.
 
 ---
 
@@ -644,7 +644,7 @@ are declared, nothing is proved about them. Here is the honest ledger:
 | `jacobian_mulVec`: plane velocity → tangent combination | **proved** | `jacobian_mulVec` |
 | Jacobians of tangents carry the Hessian rows | **proved** | `jacobianTangentX_apply`, `jacobianTangentY_apply` |
 | Plane/bowl/saddle partials up to second order | **proved** | `partial*_planeHeight`, `partial*_bowlHeight`, `partial*_saddleHeight` |
-| `geoAccel` solves the geodesic condition `G γ̈ + (vᵀHv)∇h = 0` | proved algebraically (Lean proof in §2) | `Shooting.lean` (`geoAccel_solves_geodesic`, still `sorry` there) |
+| `geoAccel` solves the geodesic condition `G (d²γ/dt²) + (vᵀHv)∇h = 0` | proved algebraically (Lean proof in §2) | `Shooting.lean` (`geoAccel_solves_geodesic`, still `sorry` there) |
 | Euler converges to the geodesic as `dt → 0` | declared | future |
 | RK4 is fourth-order accurate | declared | future |
 | discrete trajectory hugs the true geodesic | declared | future |
