@@ -326,33 +326,36 @@ no *turning* force, only the surface curving under your feet.
 
 ### Derivation of the geodesic equation
 
-Let $\gamma(t)\in\mathbb{R}^2$ be a parameter curve, $v=\dot\gamma$, $a=\ddot\gamma$, $\sigma=\mathrm{graph}\,h$, $p=\gamma(t)$.
+Let `γ(t) ∈ ℝ²` be a parameter curve, `v = γ̇`, `a = γ̈`, `σ = graph h`, `p = γ(t)`.
 
-**Proposition.** For the lifted curve $\sigma\circ\gamma$,
-$$
-(\sigma\circ\gamma)'' = J a + (v^T H v)\,e_3,\qquad
-0 = J^T(\sigma\circ\gamma)'' = G a + (v^T H v)\,\nabla h
-$$
-when $\sigma\circ\gamma$ is a geodesic. Equivalently $a = -G^{-1}(v^T H v)\nabla h = \operatorname{geoAccel}(h,p,v)$.
+**Proposition.** For the lifted curve `σ ∘ γ`,
+```text
+(σ ∘ γ)'' = J a + (vᵀ H v) e₃,
+```
+and, when `σ ∘ γ` is a geodesic,
+```text
+0 = Jᵀ (σ ∘ γ)'' = G a + (vᵀ H v) ∇h,
+```
+hence `a = -G⁻¹ (vᵀ H v) ∇h = geoAccel(h, p, v)`.
 
 *Proof.*
 
-1. **Lift.** $(\sigma\circ\gamma)(t)=\bigl(\gamma_1(t),\gamma_2(t),h(\gamma(t))\bigr)$ (`DiffGeom.graph`).
+1. **Lift.** `(σ ∘ γ)(t) = (γ₁(t), γ₂(t), h(γ(t)))` (`DiffGeom.graph`).
 2. **First derivative.** By the chain rule,
-   $$
-   (\sigma\circ\gamma)' = \bigl(v_1,\; v_2,\; \partial_x h\, v_1 + \partial_y h\, v_2\bigr)= Jv,
-   $$
-   with $J=\mathrm{jacobian}\,h\,p=\begin{bmatrix}1&0\\0&1\\\partial_x h&\partial_y h\end{bmatrix}$ (`DiffGeom.jacobian`, `DiffGeom.jacobian_mulVec`).
-3. **Second derivative.** Differentiating componentwise (product and chain rule on $\partial_i h\circ\gamma$) gives
-   $$
-   (\sigma\circ\gamma)'' = \bigl(a_1,\; a_2,\; \partial_x h\, a_1 + \partial_y h\, a_2 + v^T H v\bigr)= J a + (v^T H v)\,e_3,
-   $$
-   where $H=\nabla^2 h=\begin{bmatrix}\partial_{xx}h&\partial_{xy}h\\ \partial_{yx}h&\partial_{yy}h\end{bmatrix}$, $e_3=(0,0,1)$, and $v^T H v = v_0^2\partial_{xx}h + v_0 v_1(\partial_{xy}h+\partial_{yx}h)+v_1^2\partial_{yy}h$ (`DiffGeom.hessian`, `Shoot.hessQuad`).
-4. **Tangential projection.** A geodesic has $(\sigma\circ\gamma)''\perp T_p\Sigma$, i.e. $\langle (\sigma\circ\gamma)'', \partial_x\sigma\rangle=\langle (\sigma\circ\gamma)'', \partial_y\sigma\rangle=0$, equivalently $J^T(\sigma\circ\gamma)''=0$. Using $J^T J = G$ (`DiffGeom.gramMatrix_eq_transpose_mul`) and $J^T e_3=\nabla h$ (since $\langle \partial_x\sigma,e_3\rangle=\partial_x h$, $\langle \partial_y\sigma,e_3\rangle=\partial_y h$),
-   $$
-   0 = J^T(Ja + (v^T H v)e_3)= G a + (v^T H v)\,\nabla h.
-   $$
-5. **Solution.** $\det G = 1+|\nabla h|^2 \ge 1$ (`DiffGeom.det_gramMatrix_eq`), hence $G$ is invertible and $a = -G^{-1}(v^T H v)\nabla h$. ∎
+   ```text
+   (σ ∘ γ)' = (v₁, v₂, ∂ₓh · v₁ + ∂ᵧh · v₂) = J v,
+   ```
+   with `J = jacobian h p = [[1, 0], [0, 1], [∂ₓh, ∂ᵧh]]` (`DiffGeom.jacobian`, `DiffGeom.jacobian_mulVec`).
+3. **Second derivative.** Differentiating componentwise (product and chain rule on `∂ᵢh ∘ γ`) yields
+   ```text
+   (σ ∘ γ)'' = (a₁, a₂, ∂ₓh · a₁ + ∂ᵧh · a₂ + vᵀ H v) = J a + (vᵀ H v) e₃,
+   ```
+   where `H = [[∂ₓₓh, ∂ₓᵧh], [∂ᵧₓh, ∂ᵧᵧh]]`, `e₃ = (0, 0, 1)`, and `vᵀ H v = v₀² ∂ₓₓh + v₀ v₁ (∂ₓᵧh + ∂ᵧₓh) + v₁² ∂ᵧᵧh` (`DiffGeom.hessian`, `Shoot.hessQuad`).
+4. **Tangential projection.** A geodesic satisfies `(σ ∘ γ)'' ⟂ TₚΣ`, i.e. `⟪(σ ∘ γ)'', ∂ₓσ⟫ = ⟪(σ ∘ γ)'', ∂ᵧσ⟫ = 0`, equivalently `Jᵀ (σ ∘ γ)'' = 0`. With `Jᵀ J = G` (`DiffGeom.gramMatrix_eq_transpose_mul`) and `Jᵀ e₃ = ∇h` (since `⟪∂ₓσ, e₃⟫ = ∂ₓh`, `⟪∂ᵧσ, e₃⟫ = ∂ᵧh`),
+   ```text
+   0 = Jᵀ (J a + (vᵀ H v) e₃) = G a + (vᵀ H v) ∇h.
+   ```
+5. **Solution.** `det G = 1 + |∇h|² ≥ 1` (`DiffGeom.det_gramMatrix_eq`), so `G` is invertible and `a = -G⁻¹ (vᵀ H v) ∇h`. ∎
 
 The corresponding Lean definitions and algebraic closure:
 
@@ -385,7 +388,7 @@ def geoAccel (h : K → K → K) (p : K × K) (v : Fin 2 → K) : Fin 2 → K :=
   ![-(g22 * m₁ - g12 * m₂) / det, -(-(g12 * m₁) + g11 * m₂) / det]
 ```
 
-`geoAccel` is the closed-form solution of $G a + (v^T H v)\nabla h = 0$; the following Lean theorem states this algebraically.
+`geoAccel` is the closed-form solution of `G a + (vᵀ H v) ∇h = 0`; the following Lean theorem states this algebraically.
 
 ```lean
 theorem geoAccel_solves_geodesic (h : HeightFun) (p : Point2) (v : Vel2) :
@@ -451,7 +454,7 @@ travel (`vᵀHv` large) → strong bending.
 
 ## 2.5 `e₃` and the surface normal
 
-The surface normal is $n = \partial_x\sigma \times \partial_y\sigma = (-\partial_x h,\,-\partial_y h,\,1)=e_3 - \nabla h$ (`DiffGeom.normal_eq`):
+The surface normal is `n = ∂ₓσ × ∂ᵧσ = (-∂ₓh, -∂ᵧh, 1) = e₃ - ∇h` (`DiffGeom.normal_eq`):
 
 ```lean
 def normal (h : HeightFun) (p : Point2) : Normal :=
@@ -462,7 +465,7 @@ theorem e3_eq_normal_add_gradient (h : HeightFun) (p : Point2) :
   sorry
 ```
 
-Thus $e_3 = n + \nabla h$: $e_3$ differs from $n$ by a horizontal vector in $T_p\Sigma$, with equality iff $\nabla h=0$. The decomposition $(\sigma\circ\gamma)'' = J a + (v^T H v)e_3$ uses the fixed ambient direction $e_3$; tangential projection annihilates the normal component and turns $e_3$ into $\nabla h$, yielding $G a + (v^T H v)\nabla h = 0$.
+Thus `e₃ = n + ∇h`: `e₃` differs from `n` by a horizontal vector in `TₚΣ`, with equality iff `∇h = 0`. The decomposition `(σ ∘ γ)'' = J a + (vᵀ H v) e₃` uses the fixed ambient direction `e₃`; tangential projection annihilates the normal component and maps `e₃` to `∇h`, yielding `G a + (vᵀ H v) ∇h = 0`.
 
 ---
 
