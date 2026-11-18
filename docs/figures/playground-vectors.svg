@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" font-family="sans-serif">
+<rect x="0" y="0" width="400" height="400" fill="#eff1f5"/>
+<line x1="168" y1="190" x2="280" y2="190" stroke="rgb(127,132,156)" stroke-width="1"/>
+<line x1="196.600000" y1="169.200000" x2="247" y2="214" stroke="rgb(127,132,156)" stroke-width="1"/>
+<text x="174" y="190" font-size="14" text-anchor="middle">u</text>
+<text x="199.300000" y="171.600000" font-size="14" text-anchor="middle">v</text>
+<circle cx="220" cy="190" r="4" fill="rgb(205,214,244)"/>
+<line x1="220" y1="190" x2="251" y2="190" stroke="rgb(166,227,161)" stroke-width="2"/>
+<polygon points="260,190 251,185 251,195" fill="rgb(166,227,161)"/>
+<line x1="220" y1="190" x2="231.273316" y2="200.020725" stroke="rgb(137,180,250)" stroke-width="2"/>
+<polygon points="238,206 234.595135,196.283679 227.951497,203.757772" fill="rgb(137,180,250)"/>
+<line x1="220" y1="190" x2="220" y2="211" stroke="rgb(203,166,247)" stroke-width="2"/>
+<polygon points="220,220 225,211 215,211" fill="rgb(203,166,247)"/>
+<line x1="220" y1="190" x2="243.539940" y2="220.845439" stroke="rgb(250,179,135)" stroke-width="2"/>
+<polygon points="249,228 247.514696,217.812072 239.565184,223.878805" fill="rgb(250,179,135)"/>
+<text x="262" y="190" font-size="14" text-anchor="middle">∂x</text>
+<text x="239.100000" y="205.200000" font-size="14" text-anchor="middle">∂y</text>
+<text x="220" y="218.500000" font-size="14" text-anchor="middle">n</text>
+</svg>
