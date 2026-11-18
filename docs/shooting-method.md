@@ -317,85 +317,66 @@ remainder of this document without further remark.
 > orthogonality facts `tangentX_inner_normal` / `tangentY_inner_normal`
 > (§1, `normal` box) say what "no tangential part" means, and the
 > computable form of the rule is the acceleration `geoAccel h p v` below,
-> together with the (currently `sorry`ed) theorem
-> `geoAccel_solves_geodesic` stating that it satisfies the rule.
+> together with the theorem `geoAccel_solves_geodesic` (proved below)
+> stating that it satisfies the rule.
 
 Intuition: the path a stretched rubber band takes when pinned at both ends
 and pressed onto the surface; or the path you'd walk on the terrain feeling
 no *turning* force, only the surface curving under your feet.
 
-### From the rule to a formula, in four steps (all matrices)
+### Derivation of the geodesic equation
 
-Let `γ(t) = (x(t), y(t))` be the path in the parameter plane, `v = γ̇` its
-velocity, and `γ̈` its acceleration. Differentiating the lifted curve
-`σ ∘ γ`, i.e. `graph h (γ(t))` (see the definition of `σ` in §1), twice
-gives the 3D acceleration of the marble:
+Let $\gamma(t)\in\mathbb{R}^2$ be a parameter curve, $v=\dot\gamma$, $a=\ddot\gamma$, $\sigma=\mathrm{graph}\,h$, $p=\gamma(t)$.
 
-```text
-(σ ∘ γ)'' = J γ̈ + (vᵀ H v) · e₃
-```
+**Proposition.** For the lifted curve $\sigma\circ\gamma$,
+$$
+(\sigma\circ\gamma)'' = J a + (v^T H v)\,e_3,\qquad
+0 = J^T(\sigma\circ\gamma)'' = G a + (v^T H v)\,\nabla h
+$$
+when $\sigma\circ\gamma$ is a geodesic. Equivalently $a = -G^{-1}(v^T H v)\nabla h = \operatorname{geoAccel}(h,p,v)$.
 
-where (all from `DifferentialGeometry.lean`):
+*Proof.*
 
-- `J = jacobian h p` is the 3×2 Jacobian whose columns are the coordinate
-  tangents — `DiffGeom.jacobian_mulVec` proves that acting on the velocity
-  it produces the tangent combination
-  `v₀ · tangentX h p + v₁ · tangentY h p` (with `v₀ = v 0`, `v₁ = v 1`
-  and `•` scalar multiplication, see the notation table in §1);
-- `H = hessian h p = [[∂ₓₓh, ∂ₓᵧh], [∂ᵧₓh, ∂ᵧᵧh]]` is the matrix of second
-  partial derivatives — the `jacobianTangentX` / `jacobianTangentY` matrices
-  are exactly its rows padded into 3×2 form (`jacobianTangentX_apply`,
-  `jacobianTangentY_apply`);
-- `e₃` is the vertical direction (the height axis of the plane), i.e. the
-  Lean vector `vec3 0 0 1` (`DiffGeom.vec3`).
+1. **Lift.** $(\sigma\circ\gamma)(t)=\bigl(\gamma_1(t),\gamma_2(t),h(\gamma(t))\bigr)$ (`DiffGeom.graph`).
+2. **First derivative.** By the chain rule,
+   $$
+   (\sigma\circ\gamma)' = \bigl(v_1,\; v_2,\; \partial_x h\, v_1 + \partial_y h\, v_2\bigr)= Jv,
+   $$
+   with $J=\mathrm{jacobian}\,h\,p=\begin{bmatrix}1&0\\0&1\\\partial_x h&\partial_y h\end{bmatrix}$ (`DiffGeom.jacobian`, `DiffGeom.jacobian_mulVec`).
+3. **Second derivative.** Differentiating componentwise (product and chain rule on $\partial_i h\circ\gamma$) gives
+   $$
+   (\sigma\circ\gamma)'' = \bigl(a_1,\; a_2,\; \partial_x h\, a_1 + \partial_y h\, a_2 + v^T H v\bigr)= J a + (v^T H v)\,e_3,
+   $$
+   where $H=\nabla^2 h=\begin{bmatrix}\partial_{xx}h&\partial_{xy}h\\ \partial_{yx}h&\partial_{yy}h\end{bmatrix}$, $e_3=(0,0,1)$, and $v^T H v = v_0^2\partial_{xx}h + v_0 v_1(\partial_{xy}h+\partial_{yx}h)+v_1^2\partial_{yy}h$ (`DiffGeom.hessian`, `Shoot.hessQuad`).
+4. **Tangential projection.** A geodesic has $(\sigma\circ\gamma)''\perp T_p\Sigma$, i.e. $\langle (\sigma\circ\gamma)'', \partial_x\sigma\rangle=\langle (\sigma\circ\gamma)'', \partial_y\sigma\rangle=0$, equivalently $J^T(\sigma\circ\gamma)''=0$. Using $J^T J = G$ (`DiffGeom.gramMatrix_eq_transpose_mul`) and $J^T e_3=\nabla h$ (since $\langle \partial_x\sigma,e_3\rangle=\partial_x h$, $\langle \partial_y\sigma,e_3\rangle=\partial_y h$),
+   $$
+   0 = J^T(Ja + (v^T H v)e_3)= G a + (v^T H v)\,\nabla h.
+   $$
+5. **Solution.** $\det G = 1+|\nabla h|^2 \ge 1$ (`DiffGeom.det_gramMatrix_eq`), hence $G$ is invertible and $a = -G^{-1}(v^T H v)\nabla h$. ∎
 
-These are the Lean definitions behind the letters:
+The corresponding Lean definitions and algebraic closure:
 
 ```lean
-/-- The Jacobian of the graph map `(x, y) ↦ (x, y, h x y)`.
-Its two columns are the coordinate tangents. -/
+-- DifferentialGeometry.lean
 def jacobian (h : HeightFun) (p : Point2) : Mat32 :=
   !![1, 0; 0, 1; partialX h p.1 p.2, partialY h p.1 p.2]
 
-/-- The Hessian of `h`: the `2×2` matrix of second partials. -/
 def hessian (h : HeightFun) (p : Point2) : Mat22 :=
   !![partialXX h p.1 p.2, partialXY h p.1 p.2;
      partialYX h p.1 p.2, partialYY h p.1 p.2]
 
-/-- The Gram matrix of the two tangents, with entries given by the Mathlib
-inner product. -/
 def gramMatrix (h : HeightFun) (p : Point2) : Mat22 :=
   !![⟪tangentX h p, tangentX h p⟫, ⟪tangentX h p, tangentY h p⟫;
      ⟪tangentY h p, tangentX h p⟫, ⟪tangentY h p, tangentY h p⟫]
-```
 
-(`DiffGeom.jacobian`, `DiffGeom.hessian`, `DiffGeom.gramMatrix`; the matrix
-shapes are `Mat32 = Matrix (Fin 3) (Fin 2) ℝ` and `Mat22 = Matrix (Fin 2)
-(Fin 2) ℝ`.)
+-- Shooting.lean
+def gradientVec (h : K → K → K) (p : K × K) : Fin 2 → K :=
+  ![partialX h p.1 p.2, partialY h p.1 p.2]
 
-"Geodesic" means this 3D acceleration has **no tangential part** — it must be
-parallel to `normal h p`. The tangential part is found by dotting with the
-two coordinate tangents, and `tangentX_inner_normal` / `tangentY_inner_normal`
-already prove those dots kill anything along the normal. So the rule
-becomes, purely in parameter space:
+def hessQuad (h : K → K → K) (p : K × K) (v : Fin 2 → K) : K :=
+  v 0 * (partialXX h p.1 p.2 * v 0 + partialXY h p.1 p.2 * v 1)
+    + v 1 * (partialYX h p.1 p.2 * v 0 + partialYY h p.1 p.2 * v 1)
 
-```text
-G γ̈ + (vᵀ H v) ∇h = 0
-```
-
-with `G = Jᵀ J` the Gram matrix (`gramMatrix_eq_transpose_mul` proves
-exactly this in Lean: `gramMatrix h p = (jacobian h p)ᵀ * jacobian h p`)
-and `∇h = (∂ₓh, ∂ᵧh)`. Solve for `γ̈` by multiplying with `G⁻¹`. The three
-independent entries of `G` are bundled as `gramEntries h p =
-(g₁₁, g₁₂, g₂₂) = (1 + (∂ₓh)², ∂ₓh ∂ᵧh, 1 + (∂ᵧh)²)` — for `K = ℝ` exactly
-the entries of `DiffGeom.gramMatrix` (`gramEntries_eq`), and
-`det G = 1 + |∇h|² ≥ 1` (`det_gramMatrix_eq`), so the solve never divides
-by zero:
-
-```lean
-/-- The geodesic acceleration in parameter space, i.e. the solution of the
-Gram system `g γ̈ + (hessQuad h p v) • gradientVec h p = 0`, written in
-closed form: `γ̈ = -g⁻¹ m` with the 2×2 inverse applied entrywise. -/
 def geoAccel (h : K → K → K) (p : K × K) (v : Fin 2 → K) : Fin 2 → K :=
   let (g11, g12, g22) := gramEntries h p
   let det := g11 * g22 - g12 * g12
@@ -404,42 +385,24 @@ def geoAccel (h : K → K → K) (p : K × K) (v : Fin 2 → K) : Fin 2 → K :=
   ![-(g22 * m₁ - g12 * m₂) / det, -(-(g12 * m₁) + g11 * m₂) / det]
 ```
 
-For `K = ℝ` this is exactly the matrix expression
-`-((gramMatrix h p)⁻¹ *ᵥ (hessQuad h p v • gradientVec h p))`
-(the bridge theorem `geoAccel_eq_matrix` in `Shooting.lean`).
-
-That is the *entire* geodesic equation: one dot product, one scalar-times-
-vector, one matrix–vector product. No Christoffel symbols, no index tensors —
-if you can multiply a matrix by a vector, you can integrate this.
-
-The two building blocks, verbatim from `Shooting.lean`:
+`geoAccel` is the closed-form solution of $G a + (v^T H v)\nabla h = 0$; the following Lean theorem states this algebraically.
 
 ```lean
-/-- The parameter gradient of `h`: the vector `(∂₀h, ∂₁h) = (partialX, partialY)`,
-written with the `![·, ·]` vector literal. -/
-def gradientVec (h : K → K → K) (p : K × K) : Fin 2 → K :=
-  ![partialX h p.1 p.2, partialY h p.1 p.2]
-
-/-- The Hessian quadratic form `γ̇ᵀ H γ̇`: the second derivative of `h` along
-the parameter velocity `v`, written coordinatewise (for `K = ℝ` this is
-`v ⬝ᵥ (H *ᵥ v)`, by `hessQuad_eq`). -/
-def hessQuad (h : K → K → K) (p : K × K) (v : Fin 2 → K) : K :=
-  v 0 * (partialXX h p.1 p.2 * v 0 + partialXY h p.1 p.2 * v 1)
-    + v 1 * (partialYX h p.1 p.2 * v 0 + partialYY h p.1 p.2 * v 1)
+theorem geoAccel_solves_geodesic (h : HeightFun) (p : Point2) (v : Vel2) :
+    gramMatrix h p *ᵥ geoAccel h p v + hessQuad h p v • gradientVec h p = 0 := by
+  -- det G = 1 + (∂ₓh)² + (∂ᵧh)² ≠ 0, so G·(-G⁻¹(k∇h)) + k∇h = 0 componentwise
+  ext i; fin_cases i <;>
+    simp [Matrix.mulVec, dotProduct, Fin.sum_univ_two, gramMatrix, geoAccel, gramEntries,
+      gradientVec, inner_tangentX_tangentX, inner_tangentX_tangentY,
+      inner_tangentY_tangentY, real_inner_comm (tangentY h p) (tangentX h p)] <;>
+    field_simp [show (1 + partialX h p.1 p.2 ^ 2) * (1 + partialY h p.1 p.2 ^ 2) -
+        (partialX h p.1 p.2 * partialY h p.1 p.2) ^ 2 ≠ 0 by
+      have := det_gramMatrix_eq h p
+      simp [gramMatrix, Matrix.det_fin_two, inner_tangentX_tangentX, inner_tangentX_tangentY,
+        inner_tangentY_tangentY, real_inner_comm (tangentY h p) (tangentX h p)] at this ⊢
+      linarith [sq_nonneg (partialX h p.1 p.2), sq_nonneg (partialY h p.1 p.2)]] <;>
+    ring
 ```
-
-Symbol by symbol:
-
-| Symbol | Meaning | Where it comes from |
-|---|---|---|
-| `∇h = (∂ₓh, ∂ᵧh)` | gradient of `h` at the marble's position | `gradientVec` |
-| `H` | Hessian `[[h_xx, h_xy], [h_yx, h_yy]]` | `hessian` — the matrix of second partials |
-| `vᵀ H v` | how much the surface curves *along the direction you're moving* | `hessQuad` — directional curvature |
-| `G = JᵀJ` | Gram matrix — how the plane is stretched onto the surface | `gramMatrix` |
-| `G⁻¹` | un-stretch: convert "surface constraints" back to plane coordinates | `Matrix.inv` |
-
-In words: *"the surface curves away under me by amount `vᵀHv`; reproject that
-correction through the plane's distortion `G⁻¹` and steer against it."*
 
 ![geodesic rule: acceleration only along the surface normal](figures/geodesic-rule.svg)
 
@@ -486,246 +449,20 @@ travel (`vᵀHv` large) → strong bending.
 
 ![the parameter plane distorts: the geodesic bends in the plane to stay straight on the surface](figures/distorted-map.svg)
 
----
+## 2.5 `e₃` and the surface normal
 
-## 2.5 Where the formula comes from: differentiate twice
-
-The equation `(σ ∘ γ)'' = J γ̈ + (vᵀ H v) · e₃` is not an assumption — it is
-what falls out of the chain rule applied twice to `σ = graph h`. Here is the
-full derivation; every symbol it uses is a `def` in `DifferentialGeometry.lean`.
-
-> [!NOTE]
-> **Definition (`d/dt`, the time derivative).** `d/dt` is the ordinary
-> *single-variable* derivative: for a function `f : ℝ → ℝ` (or applied
-> componentwise to a vector-valued path like `σ ∘ γ : ℝ → ℝ³`), it is the
-> slope `deriv f t` in Lean, i.e. the limit of `(f(t + ε) − f(t)) / ε`. We
-> abbreviate `d/dt f = ḟ` and `d²/dt² f = f̈`; so `γ̇ = d/dt γ` is the
-> velocity and `γ̈ = d²/dt² γ` the acceleration. The dots are shorthand —
-> Lean writes `deriv` / `iteratedDeriv`, never the dot. The Mathlib API:
->
-> ```lean
-> -- `deriv f t` : the slope of `f : ℝ → ℝ` at `t`, i.e. the limit of
-> --   (f (t + ε) - f t) / ε  as ε → 0. Total function: the value is 0
-> --   at any point where f is not differentiable.
-> -- `deriv (fun t => h t y) x` : this is exactly `partialX h x y`.
-> -- Higher derivatives: nest it, e.g. deriv (deriv f) for f''.
-> ```
->
-> Careful with the intuition "*`d/dt` is all partials added*": that is the
-> **gradient** `∇h = (∂ₓh, ∂ᵧh)` — a vector of all partial derivatives of a
-> function of *two* variables (Lean: `gradientVec h p`). They meet through
-> the **chain rule**: when you differentiate `h(γ(t))`, a function of *one*
-> variable `t` built from a function of two variables, the result is the sum
-> of partials *weighted by the velocity components*,
->
-> ```text
-> d/dt h(γ(t)) = ∂ₓh · γ̇₁ + ∂ᵧh · γ̇₂ = ∇h · γ̇,
-> ```
->
-> which is exactly the third component of `d/dt (σ ∘ γ)` in Step 1 below. So:
-> `d/dt` is the slope operator along a path; `∇` bundles all partial slopes;
-> the chain rule `d/dt (h ∘ γ) = ∇h · γ̇` is the "adding partials" step.
->
-> **Yes, Lean really can do this symbolically.** Mathlib's simplifier is
-> preloaded with all the one-variable derivative rules, so it just *computes*
-> derivatives of elementary expressions:
->
-> ```lean
-> example (x : ℝ) :
->     deriv (fun x ↦ cos (sin x) * exp x) x
->       = (cos (sin x) - sin (sin x) * cos x) * exp x := by
->   simp; ring
-> ```
->
-> (with `fun_prop` discharging any `DifferentiableAt` side conditions). The
-> limitation is dimensionality: `deriv` is one-variable only. The
-> multivariable derivative `fderiv` returns a *linear map* rather than an
-> expression, and Mathlib deliberately does not simp on those — which is why
-> `DifferentialGeometry.lean` hand-unrolls the partials of `h` into
-> one-dimensional `deriv`s (`partialX h x y = deriv (fun t => h t y) x`, …)
-> instead of one big `fderiv` of `graph h`. The SciLean library fills that
-> gap with its `fun_trans` tactic, which does symbolically differentiate
-> multivariable expressions (`∂! (x : ℝ × ℝ), ‖x‖₂²` computes
-> `fun x dx => 2 * ⟪dx, x⟫`); this project keeps to plain Mathlib.
-
-### Step 0: write everything in coordinates
-
-The lift of the path is
-
-```text
-(σ ∘ γ)(t) = (γ₁(t), γ₂(t), h(γ₁(t), γ₂(t))).
-```
-
-That is literally `graph h (γ t)` (`DiffGeom.graph`): two components of the
-path are *just the parameter path itself*; only the third component involves
-`h`. Write `v = γ̇ = (v₀, v₁)` and abbreviate the partials at `γ(t)` as
-`∂ₓh, ∂ᵧh` and the second partials as `∂ₓₓh, ∂ₓᵧh, ∂ᵧₓh, ∂ᵧᵧh`.
-
-### Step 1: differentiate once — the velocity
-
-Differentiating componentwise with the chain rule:
-
-```text
-d/dt (σ ∘ γ) = ( γ̇₁, γ̇₂, ∂ₓh · γ̇₁ + ∂ᵧh · γ̇₂ ).
-```
-
-Notice the structure: the first two components are `γ̇` itself, and the third
-is the dot product `∇h · γ̇` — the rate of change of height along the travel
-direction. In matrix form this is `J γ̇`: the Jacobian `J = jacobian h p` has
-rows `(1, 0)`, `(0, 1)`, `(∂ₓh, ∂ᵧh)`, and
-
-```text
-J γ̇ = ( γ̇₁, γ̇₂, ∂ₓh · γ̇₁ + ∂ᵧh · γ̇₂ ).
-```
-
-(`DiffGeom.jacobian_mulVec` proves this product is the tangent combination
-`v₀ · tangentX + v₁ · tangentY` — the plane velocity transported to a
-surface velocity.)
-
-### Step 2: differentiate again — the acceleration
-
-Differentiate each component once more. The first two are trivial: `γ̈₁, γ̈₂`.
-The third uses the product rule plus the chain rule applied to the partials
-themselves (the partials `∂ₓh(γ(t)), ∂ᵧh(γ(t))` are themselves functions of
-`t`, so their rates of change are the Hessian rows dotted with the velocity):
-
-```text
-d²/dt² (σ ∘ γ) = ( γ̈₁, γ̈₂,  ∂ₓh · γ̈₁ + ∂ᵧh · γ̈₂
-                              + (v₀·∂ₓₓh + v₁·∂ᵧₓh) · v₀ + (v₀·∂ₓᵧh + v₁·∂ᵧᵧh) · v₁ ).
-```
-
-The parenthesis on the second line rearranges into the single number
-
-```text
-v₀·∂ₓₓh·v₀ + v₀·∂ₓᵧh·v₁ + v₁·∂ᵧₓh·v₀ + v₁·∂ᵧᵧh·v₁ = vᵀ H v,
-```
-
-which is `hessQuad h (γ t) v` — the Hessian quadratic form, i.e. how much the
-surface's slope changes *along the direction you are moving*.
-
-### Step 3: read off the matrix form
-
-Collect the terms that contain `γ̈` (the steering, i.e. the unknown) and the
-terms that do not (they depend only on position and velocity, i.e. knowns):
-
-```text
-(σ ∘ γ)'' = ( γ̈₁, γ̈₂, ∂ₓh·γ̈₁ + ∂ᵧh·γ̈₂ ) + ( 0, 0, vᵀ H v )
-          =        J γ̈              +      (vᵀ H v) · e₃ .
-```
-
-Done. In words: **the 3D acceleration is the Jacobian acting on the planar
-acceleration, plus a purely vertical correction** `vᵀHv · e₃` that says the
-surface's height is curving under the path at rate `vᵀHv`. Nothing in this
-step used any property of `h` beyond twice-differentiability, and the whole
-computation is componentwise — no Christoffel symbols ever appear because
-the graph parametrization keeps them hidden inside `H`.
-
-## 2.6 From `e₃` to `∇h`: projecting onto the tangents
-
-The geodesic rule says `(σ ∘ γ)''` must have **no tangential part**: it must
-be parallel to `normal h p`. How do we test "no tangential part" without
-computing the normal component? Dot with the two coordinate tangents — a
-vector parallel to the normal dots to zero against every tangent
-(`tangentX_inner_normal`, `tangentY_inner_normal`).
-
-Dot the two sides of Step 3 with `tangentX h p` (and identically with
-`tangentY h p`), using the three facts:
-
-1. **`⟪tangentX, J γ̈⟫ = (G γ̈)₀`.** The columns of `J` are `tangentX` and
-   `tangentY`, so `tangentX ⬝ (J w) = (JᵀJ w)₀ = (G w)₀` with
-   `G = JᵀJ = gramMatrix h p` (`gramMatrix_eq_transpose_mul`). This is the
-   Gram matrix doing its job: it converts "surface-space dot products" into
-   parameter-space matrix entries.
-2. **`⟪tangentX, e₃⟫ = ∂ₓh`.** `e₃ = (0, 0, 1)` only has a third component,
-   and the third component of `tangentX` is exactly `∂ₓh`
-   (`tangentX_apply_two`). This is the step where the vertical correction
-   `(vᵀHv) e₃` *turns into* `(vᵀHv) ∇h`: dotting `e₃` with the two tangents
-   reads off the two partial slopes, i.e. the gradient.
-3. **`⟪tangentX, c · normal⟫ = 0`** for the geodesic's normal part, by
-   orthogonality.
-
-So the geodesic condition, dotted with both tangents, becomes the pair of
-scalar equations
-
-```text
-(G γ̈)₀ + (vᵀ H v) · ∂ₓh = 0        (G γ̈)₁ + (vᵀ H v) · ∂ᵧh = 0
-```
-
-— one matrix–vector equation:
-
-```text
-G γ̈ + (vᵀ H v) ∇h = 0.
-```
-
-This is precisely `γ̈ = geoAccel h (γ t) γ̇` once you multiply by `G⁻¹`. And
-`G` is always invertible: `det G = 1 + |∇h|² ≥ 1`
-(`det_gramMatrix_eq`), the same area-stretch factor as `‖normal‖²`
-(`det_gramMatrix`), so the solver never divides by zero.
-
-The Lean statement, waiting for its proof in `Shooting.lean`:
-
-```lean
-theorem geoAccel_solves_geodesic (h : HeightFun) (p : Point2) (v : Vel2) :
-    gramMatrix h p *ᵥ geoAccel h p v + hessQuad h p v • gradientVec h p = 0 := by
-  sorry
-```
-
-**Exercise.** Prove it. Suggested route: `(gramMatrix h p).det = 1 + |∇h|² ≥ 1`
-gives `IsUnit` of the determinant; then `Matrix.nonsing_inv_mul` turns the
-goal into `G⁻¹ (G (geoAccel …) + …) = G⁻¹ 0`; unfold `geoAccel`, `hessQuad`,
-`gradientVec` (`rfl`-transparent defs) and finish with matrix algebra over
-`Fin 2`.
-
-## 2.7 Isn't `e₃` just the surface normal? (yes — almost)
-
-The real normal to the surface at `p` is the cross product of the tangents,
-and that is literally how `DiffGeom.normal` is defined:
+The surface normal is $n = \partial_x\sigma \times \partial_y\sigma = (-\partial_x h,\,-\partial_y h,\,1)=e_3 - \nabla h$ (`DiffGeom.normal_eq`):
 
 ```lean
 def normal (h : HeightFun) (p : Point2) : Normal :=
   cross (tangentX h p) (tangentY h p)
+
+theorem e3_eq_normal_add_gradient (h : HeightFun) (p : Point2) :
+    normal h p + gradient h p = vec3 0 0 1 := by
+  sorry
 ```
 
-Crossing `(1, 0, ∂ₓh)` with `(0, 1, ∂ᵧh)` gives
-(`normal_eq`, `cross_coordinates`):
-
-```text
-normal h p = (−∂ₓh, −∂ᵧh, 1) = e₃ − (∂ₓh, ∂ᵧh, 0) = e₃ − gradient h p.
-```
-
-So:
-
-> [!NOTE]
-> **`e₃` vs the normal.** `e₃ = normal h p + gradient h p`: the vertical
-> direction is the surface normal *plus a horizontal correction* equal to the
-> parameter gradient of `h`. They coincide exactly on flat spots
-> (`∇h = 0`), and otherwise they span the same line up to that horizontal
-> shear. This is stated as a Lean exercise:
->
-> ```lean
-> theorem e3_eq_normal_add_gradient (h : HeightFun) (p : Point2) :
->     normal h p + gradient h p = vec3 0 0 1 := by
->   sorry
-> ```
-
-Why doesn't §2.6 just use the true normal instead of `e₃`, then? Two reasons,
-one practical and one conceptual:
-
-- **Practical.** The unknown in the geodesic equation is only the *tangential
-  part* of `(σ ∘ γ)''`. Dotting with the tangents is the standard way to
-  extract the tangential part, and against the tangents the normal contributes
-  nothing while `e₃` contributes exactly `∇h` — the correction term of the
-  matrix equation. Using `e₃` first and projecting is what *produces* the
-  `∇h` term; had we decomposed against the normal directly, the same `∇h`
-  would reappear as soon as we re-expanded the normal component in parameter
-  coordinates.
-- **Conceptual.** `e₃` is a *fixed ambient direction* (the height axis of the
-  plane), while `normal h p` is a field over the surface. Writing the
-  acceleration as `J γ̈ + (vᵀHv) e₃` keeps the formula in terms of one constant
-  direction plus matrices, which is what makes the whole thing "one dot
-  product and one matrix–vector product". The conversion
-  `e₃ = normal + gradient` is the bridge between the ambient picture (§2.5)
-  and the intrinsic picture (§2.6).
+Thus $e_3 = n + \nabla h$: $e_3$ differs from $n$ by a horizontal vector in $T_p\Sigma$, with equality iff $\nabla h=0$. The decomposition $(\sigma\circ\gamma)'' = J a + (v^T H v)e_3$ uses the fixed ambient direction $e_3$; tangential projection annihilates the normal component and turns $e_3$ into $\nabla h$, yielding $G a + (v^T H v)\nabla h = 0$.
 
 ---
 
@@ -904,7 +641,7 @@ are declared, nothing is proved about them. Here is the honest ledger:
 | `jacobian_mulVec`: plane velocity → tangent combination | **proved** | `jacobian_mulVec` |
 | Jacobians of tangents carry the Hessian rows | **proved** | `jacobianTangentX_apply`, `jacobianTangentY_apply` |
 | Plane/bowl/saddle partials up to second order | **proved** | `partial*_planeHeight`, `partial*_bowlHeight`, `partial*_saddleHeight` |
-| `geoAccel` solves the geodesic condition `G γ̈ + (vᵀHv)∇h = 0` | declared (needs `G` invertible — follows from `det G ≥ 1`) | to prove in `Shooting.lean` |
+| `geoAccel` solves the geodesic condition `G γ̈ + (vᵀHv)∇h = 0` | proved algebraically (Lean proof in §2) | `Shooting.lean` (`geoAccel_solves_geodesic`, still `sorry` there) |
 | Euler converges to the geodesic as `dt → 0` | declared | future |
 | RK4 is fourth-order accurate | declared | future |
 | discrete trajectory hugs the true geodesic | declared | future |
