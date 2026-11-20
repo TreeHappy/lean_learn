@@ -129,6 +129,11 @@ marble. It has two modes, geodesic pinball and a physics-driven walk mode;
 switch with `1`/`2`. The geometry, forces and rolling constraint used by both
 modes are derived in [`docs/game-math.md`](docs/game-math.md).
 
+The numerical core (Euler/RK4 stepping, the two acceleration fields and the
+rolling kinematics) is mirrored in executable Lean in
+[`lean/Brane/GamePhysics.lean`](lean/Brane/GamePhysics.lean). A gentle,
+numerics-first introduction is [`docs/ode-numerics.md`](docs/ode-numerics.md).
+
 ## Editor
 
 The Lean integration is a custom `~/.config/nvim/lua/plugins/lean.lua` because `lean.nvim` has no `setup()` and reads `vim.g.lean_config` instead.
