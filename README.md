@@ -122,6 +122,11 @@ place, `T`/`N`/`G`/`S` toggle tangents/normal/gradient/second derivatives,
 `W` wireframe, `O` orbit camera, `1..n` switch surface. New surfaces are one
 entry in the `SURFACES` registry at the top of the file.
 
+`web/index.html` is the GitHub Pages game: a colourful terrain with a rolling
+marble. It has two modes, geodesic pinball and a physics-driven walk mode;
+switch with `1`/`2`. The geometry, forces and rolling constraint used by both
+modes are derived in [`docs/game-math.md`](docs/game-math.md).
+
 ## Editor
 
 The Lean integration is a custom `~/.config/nvim/lua/plugins/lean.lua` because `lean.nvim` has no `setup()` and reads `vim.g.lean_config` instead.
