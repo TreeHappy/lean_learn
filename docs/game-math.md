@@ -135,7 +135,7 @@ A shot is the initial value problem
 $$
 \mathbf s=(\dot x,\dot y,\ddot x,\ddot y)
          =(x,y,v_x,v_y),\qquad
-\dot{\mathbf s}=(v_x,v_y,\texttt{geoAccel}_x,\texttt{geoAccel}_y).
+\dot{\mathbf s}=(v_x,v_y,\mathrm{geoAccel}_x,\mathrm{geoAccel}_y).
 $$
 
 The launch velocity is $s(d_x,d_y)$ where $s\in[0.3,4.2]$ comes from the drag
@@ -251,7 +251,7 @@ When $|x|$ or $|y|$ exceeds `EXT - 0.12`, the coordinate is clamped and the
 normal velocity is reflected with restitution $e=$ `RESTITUTION`:
 
 $$
-x\mapsto \operatorname{clamp}(x),\qquad
+x\mapsto \mathrm{clamp}(x),\qquad
 \dot x\mapsto -e\,\dot x .
 $$
 
@@ -330,14 +330,14 @@ $$
 $$
 
 For constant $\boldsymbol\omega$ over a step $\Delta t$, with
-$\theta=\lVert\boldsymbol\omega\rVert\Delta t$ and
-$\hat{\boldsymbol\omega}=\boldsymbol\omega/\lVert\boldsymbol\omega\rVert$,
+$\theta=\|\boldsymbol\omega\|\Delta t$ and
+$\hat{\boldsymbol\omega}=\boldsymbol\omega/\|\boldsymbol\omega\|$,
 the exact update is
 
 $$
 \Delta Q=\left(\cos\frac\theta2,\;
  \hat{\boldsymbol\omega}\sin\frac\theta2\right),\qquad
-Q_{n+1}=\operatorname{normalize}(\Delta Q\,Q_n).
+Q_{n+1}=\mathrm{normalize}(\Delta Q\,Q_n).
 $$
 
 `Quaternion.premultiply` implements the left multiplication because the
@@ -357,10 +357,10 @@ travel, and the spin axis tilts with the surface normal.
   The ramp is stored per vertex in a `color` attribute and multiplied by the
   material's lighting in the shader.
 
-* **Contour bands.** Let $d=\bigl|14t-\operatorname{round}(14t)\bigr|$ be the
+* **Contour bands.** Let $d=\bigl|14t-\mathrm{round}(14t)\bigr|$ be the
   distance to the nearest contour level in normalized height. The vertex
   colour is scaled by
-  $0.82+0.18\,\operatorname{smoothstep}(d,0.02,0.12)$, giving fourteen subtle
+  $0.82+0.18\,\mathrm{smoothstep}(d,0.02,0.12)$, giving fourteen subtle
   darker bands across the height range. Grid lines use $0.55\times$ the ramp
   colour so they read as ink on the bright surface.
 

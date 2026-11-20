@@ -2,6 +2,8 @@
 
 A Lean 4 workspace with the code and its research notebook kept in separate packages.
 
+**Play the browser sandbox:** [treehappy.github.io/lean_learn](https://treehappy.github.io/lean_learn/)
+
 * `lean/` is the code package. It depends on Mathlib `v4.34.0`.
 * `notes/` is a [Verso](https://verso.lean-lang.org) Manual that documents the setup, the language, the editor, and the project.
 * Notes quote real declarations from `lean/` through Verso anchors, so prose and code cannot drift apart.
