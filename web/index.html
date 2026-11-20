@@ -516,6 +516,11 @@ const shadow = new THREE.Mesh(
 scene.add(shadow);
 
 const player = { x: 0, y: 0, vx: 0, vy: 0, q: new THREE.Quaternion() };
+const walk = {
+  s: [player.x, player.y, 0, 0],
+  keys: new Set(),
+  acc: 0,
+};
 
 function surfaceFrame(x, y) {
   const [hx, hy] = derivativesAt(x, y);
@@ -663,12 +668,6 @@ function updateImpact(now) {
 /* ============================================================
    Walk-mode state and integration
    ============================================================ */
-const walk = {
-  s: [player.x, player.y, 0, 0],
-  keys: new Set(),
-  acc: 0,
-};
-
 function stepWalk(dt) {
   walk.s = rk4Step(walk.s, dt, walkAccel);
   const lim = EXT - 0.12;
