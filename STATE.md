@@ -1,7 +1,7 @@
 # Project state
 
 A running log of where the project stands, so any session can pick up here.
-Last updated: 2026-11-15.
+Last updated: 2026-11-23.
 
 ## Repo & infrastructure
 
@@ -13,9 +13,12 @@ Last updated: 2026-11-15.
     the `mathlib` require must stay last in the file, see comment there).
   - `notes/` — Verso Manual (subverso pinned to the Verso v4.35.0 revision;
     may need a v4.34-matching rev if the notes build breaks).
-- `make lean`, `make notes`, `make serve`, `make figures` all work. Only
-  intentional `sorry`: `Brane.Exercises.zero_add_exercise` (plus the
-  documented exercise `sorry`s in `Brane/Shooting.lean`).
+- `make lean`, `make notes`, `make serve`, `make figures` all work.
+  Intentional `sorry`s: `Brane.Exercises.zero_add_exercise`, the documented
+  exercise `sorry`s in `Brane/Shooting.lean`, the geometric bridges in
+  `Brane/GADiffGeom.lean`, and the new inventories in
+  `Brane/Connections.lean`, `Brane/ParallelTransport.lean`, and
+  `Brane/LieAlgebra.lean` (listed below).
 - GitHub Pages is enabled from the `gh-pages` branch:
   <https://treehappy.github.io/lean_learn/> (redirects to the interactive
   surface viewer at `/interactive/surface.html`).
@@ -89,6 +92,46 @@ Last updated: 2026-11-15.
 - Remaining milestones (from the original plan): grade projections,
   blades as subspace carriers (`tangentX ∧ tangentY` = tangent plane,
   `‖blade‖² = det gramMatrix`), rotors/versors for camera math.
+
+## Connections, parallel transport, and Lie algebras
+
+- `lean/Brane/Connections.lean`, namespace `Brane.Conn` — the affine
+  connection layer on the parameter plane:
+  - `ParamField = Point2 → Vel2`, `dirDeriv` via `fderiv`;
+  - `AffineConnection` with the two Wikipedia axioms (additive /
+    `C∞`-linear in `X`, Leibniz in `Y`); `flatConn` proved;
+  - `metricPartial`, `christoffel` (symbols of the second kind from a
+    metric), `christoffelCorr`, `covOfChristoffel`, `leviCivita h` from
+    `gramMatrix h`; `christoffel_symm` proved;
+  - `lieBracketParam`, `torsion`, `curvature`;
+  - `VectorBundleConnection F`, `affineAsVectorBundle`, `vbcCurvature`,
+    and the dual/tensor/endomorphism connections as existence theorems.
+  - Proved: directional-derivative linearity, flat-connection axioms,
+    Christoffel-correction bilinearity, Christoffel symmetry, the
+    `covOfChristoffel` axioms.
+  - `sorry`: `leviCivita_torsion_free`, `leviCivita_metric_compatible`,
+    `torsion_anti`, `curvature_tensorial`, `leviCivita_unique`,
+    `dualConn_exists`, `tensorConn_exists`, `endConn_exists`.
+- `lean/Brane/ParallelTransport.lean`, namespace `Brane.Trans`:
+  - `Curve`, `FieldAlong`, `curveVelocity`, `covAlongChristoffel`,
+    `isParallel`, `parallelTransport_exists`, `parallelTransport`,
+    `transportMap`, `reverseCurve`, `holonomyGroup`, `isGeodesic`,
+    `curveAccel`.
+  - `parallelTransport` is `Classical.choose` from the existence theorem;
+    its initial condition and parallel equation are proved.
+  - `sorry`: `parallelTransport_exists`, `transportMap_linear`,
+    `transportMap_reverse`, `id_mem_holonomyGroup`,
+    `isGeodesic_leviCivita_iff_Shoot`.
+- `lean/Brane/LieAlgebra.lean`, namespace `Brane.Lie`:
+  - `Vec3` with the cross product as `Bracket`; `crossLieRing`,
+    `crossLieAlgebra`; `bracket_jacobi` and `bracket_leibniz` proved
+    (coordinates + `fin_cases`/`ring`); `crossAdjoint`,
+    `crossAdjoint_leibniz`; `hatMatrix`, `hatMatrix_mem_so`,
+    `hatMatrix_commutator`; `matrix_bracket_eq_commutator`, `mem_so_iff`,
+    `mem_sl_iff`, `derivation_leibniz`.
+  - `sorry`: `so3MatrixEquiv` (`Vec3 ≃ₗ⁅ℝ⁆ so(3)`).
+- Docs: `docs/connections.md`, `docs/lie-algebra.md`; bibliography in
+  `references.bib` with a human-readable index in `bibtex.md`.
 
 ## Conventions
 

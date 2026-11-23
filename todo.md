@@ -104,7 +104,46 @@ theorem is an empty proof waiting for you). Suggested order:
    quantity the Gram-inverse in `Brane.Shoot.geoAccel` consumes, so it is
    the link between the shooter and GA.
 
-## 4. Later ideas
+## 4. Open `sorry`s — connections, transport, Lie algebras
+
+The new modules are real definitions with the geometric bridges left open.
+
+### `lean/Brane/Connections.lean` (`Brane.Conn`)
+
+1. `leviCivita_torsion_free` — expand `torsion (leviCivita h)`, use
+   `christoffel_symm` and symmetry of mixed partials.
+2. `leviCivita_metric_compatible` — differentiate `Y ⬝ᵥ (G Z)` and use
+   `christoffel` being the metric connection; this is the `∂g = Γ + Γ`
+   identity.
+3. `torsion_anti`, `curvature_tensorial` — unfold and use
+   antisymmetry of `lieBracketParam`.
+4. `leviCivita_unique` — the fundamental theorem of Riemannian geometry;
+   compare two torsion-free metric connections.
+5. `dualConn_exists`, `tensorConn_exists`, `endConn_exists` — construct
+   the induced connections from the product rules; the formulas in the
+   statements determine the definitions.
+
+### `lean/Brane/ParallelTransport.lean` (`Brane.Trans`)
+
+1. `parallelTransport_exists` — Picard–Lindelöf for the linear ODE
+   `V̇ + Γ(γ̇, V) = 0`; uniqueness gives well-definedness.
+2. `transportMap_linear` — linearity of the solution in the initial
+   vector (superposition).
+3. `transportMap_reverse` — the reversed curve gives the inverse
+   transport; use uniqueness.
+4. `id_mem_holonomyGroup` — the constant loop transports identically
+   (again uniqueness).
+5. `isGeodesic_leviCivita_iff_Shoot` — the Christoffel-symbol geodesic
+   equation is the matrix equation `γ̈ = Shoot.geoAccel h γ γ̇`; combine
+   the metric-compatibility computation with `Shoot.geoAccel_eq_matrix`.
+
+### `lean/Brane/LieAlgebra.lean` (`Brane.Lie`)
+
+1. `so3MatrixEquiv` — define the inverse of `hatMatrix` by reading off
+   `(A₂₁, A₀₂, A₁₀)` and prove bracket preservation using
+   `hatMatrix_commutator`.
+
+## 5. Later ideas
 
 - GA shooting: restate `Shoot.geoAccel` as a GA sandwich
   (`bladeNormSq`-normalized projection), then prove the matrix form and

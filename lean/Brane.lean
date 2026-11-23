@@ -4,4 +4,7 @@ import Brane.Shooting
 import Brane.GamePhysics
 import Brane.GeometricAlgebra
 import Brane.GADiffGeom
+import Brane.Connections
+import Brane.ParallelTransport
+import Brane.LieAlgebra
 import Brane.Exercises
