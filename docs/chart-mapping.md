@@ -127,7 +127,11 @@ prototype on `M = graph h`:
   can be obtained from the tangent frame.
 * **Geodesics.** `Brane.Shooting` and `Brane.ParallelTransport` evolve geodesics
   in parameter space. The shooting method is the computational form of
-  `exp_p`: choose an initial velocity and integrate for unit time.
+  `exp_p`: choose an initial velocity and integrate for unit time. Eberly's
+  *Riemannian Geodesics* notes are a useful computational reference for this
+  view: they derive the geodesic ODE from the metric/Christoffel symbols and
+  treat geodesic tracing as numerical evolution of that ODE, which is the same
+  bridge needed for an exponential-map chart.
 * **Parallel transport.** Transporting a tangent basis along geodesics gives a
   moving frame, related to Fermi/parallel normal coordinates.
 * **Distortion.** `gramMatrix h` is already the first fundamental form in the
@@ -268,6 +272,10 @@ seams/cut boundaries    <-> chart transitions / overlap maps
   metric expansion.
 * Texture mapping / parameterization surveys for the graphics-side vocabulary:
   UV charts, Jacobians, conformal and isometric distortion.
+* David Eberly, [Riemannian Geodesics](https://www.geometrictools.com/Documentation/RiemannianGeodesics.pdf),
+  Geometric Tools Documentation — computational treatment of Riemannian metrics,
+  Christoffel symbols, geodesic equations, and geodesic evolution; useful
+  background for implementing `exp_p` by shooting.
 * Wikipedia, [List of map projections](https://en.wikipedia.org/wiki/List_of_map_projections)
   — catalog of projection families and distortion properties used as chart
   analogies.

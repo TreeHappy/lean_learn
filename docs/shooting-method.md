@@ -798,6 +798,11 @@ waiting for its proofs.
   <https://mtaylor.web.unc.edu/wp-content/uploads/sites/16915/2018/04/appendc.pdf>
 * L. Nicolaescu, *Lectures on the Geometry of Manifolds* —
   <https://academicweb.nd.edu/~lnicolae/Lectures.pdf>
+* D. Eberly, *Riemannian Geodesics* (Geometric Tools Documentation) —
+  <https://www.geometrictools.com/Documentation/RiemannianGeodesics.pdf> —
+  computational derivation of the geodesic equation from the metric and
+  Christoffel symbols; frames geodesic tracing as numerical ODE evolution,
+  the same shooting/exponential-map mechanism used here.
 
 ### Papers and books
 

@@ -389,6 +389,11 @@ them is proved.
 
 * C. Wendl, *Lecture Notes on Bundles and Connections* —
   <https://www.mathematik.hu-berlin.de/~wendl/connections.html>
+* D. Eberly, *Riemannian Geodesics* (Geometric Tools Documentation) —
+  <https://www.geometrictools.com/Documentation/RiemannianGeodesics.pdf> —
+  computational companion for the geodesic equation, Christoffel symbols, and
+  geodesic evolution on Riemannian manifolds, complementing the connection and
+  parallel-transport view developed here.
 * M. Taylor, *Connections and Curvature* (Appendix C) —
   <https://mtaylor.web.unc.edu/wp-content/uploads/sites/16915/2018/04/appendc.pdf>
 * L. Nicolaescu, *Lectures on the Geometry of Manifolds* —

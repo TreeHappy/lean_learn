@@ -94,6 +94,10 @@ this page is the human-readable index of the same sources.
   <https://mtaylor.web.unc.edu/wp-content/uploads/sites/16915/2018/04/appendc.pdf>
 * L. Nicolaescu, *Lectures on the Geometry of Manifolds* —
   <https://academicweb.nd.edu/~lnicolae/Lectures.pdf>
+* D. Eberly, *Riemannian Geodesics* (Geometric Tools Documentation) —
+  <https://www.geometrictools.com/Documentation/RiemannianGeodesics.pdf> —
+  computational derivation of geodesic equations, Christoffel symbols, and
+  geodesic evolution; useful for shooting/exponential-map implementations.
 * V. V. Datar, *Lectures on Riemannian Geometry* —
   <https://math.iisc.ac.in/~vvdatar/Lecture_Notes/RG_Lectures_typesett_published.pdf>
 * M. Taylor, *Riemannian Geometry* (Imperial College notes) —
