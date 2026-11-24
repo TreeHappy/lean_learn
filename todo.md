@@ -42,19 +42,24 @@ reflection-based intersection.
 
 | Terathon class | Lean target | Status | Notes |
 |---|---|---|---|
-| `FlatPoint2D/3D` | new `Brane.PGA` | ⬜ | vectors of `Cl(3,0,1)`: `CliffordAlgebra` over the degenerate quadratic form with `e₄² = 0` |
-| `Line2D/3D` | new `Brane.PGA` | ⬜ | bivector blades `e₄₁e₄₂e₄₃` + `e₂₃e₃₁e₁₂` |
-| `Plane3D` | new `Brane.PGA` | ⬜ | trivector blade |
-| `Motor2D/3D` | new `Brane.PGA` | ⬜ | even elements; `Transform p Q = Q p Q̰` sandwich — the docstring in `GADiffGeom.lean` already uses this pattern informally |
-| `Flector2D/3D` | new `Brane.PGA` | ⬜ | odd elements; reflections |
-| `TSAlgebra` (the generic bracket-based GA engine) | n/a | ⬜ | C++ template machinery for compiler-algebra; in Lean we get symbolic computation for free |
+| `FlatPoint2D/3D` | `Brane.PGA` | ✅ | vectors of `Cl(2,0,1)` / `Cl(3,0,1)`; `flatPoint2`, `flatPoint3`, `flatPoint3WithWeight` build the concrete blades |
+| `Line2D/3D` | `Brane.PGA` | ✅ | `line2` uses `e₂₃, e₃₁, e₁₂`; `line3` uses `e₄₁, e₄₂, e₄₃` plus the same moment blades |
+| `Plane3D` | `Brane.PGA` | ✅ | `plane3` on the trivector basis `e₂₃₄, e₃₁₄, e₁₂₄, e₃₂₁` |
+| `Motor2D/3D` | `Brane.PGA` | ✅ | `motor2`, `motor3`, `identityMotor2/3`; the action is `Brane.PGA.sandwich Q p = Q p Q̰`, with `transform2/3` wrappers |
+| `Flector2D/3D` | `Brane.PGA` | ✅ | `flector2`, `flector3`; reflections use the same sandwich (`reflectPoint3`) |
+| `TSAlgebra` (the generic bracket-based GA engine) | `Brane.PGA.TSAlgebra` | ✅ | alias for `CliffordAlgebra`; Lean provides the symbolic expansion directly |
 
 ### Conformal geometric algebra (`TSConformal2D/3D`, `TSRoundPoint3D`, `TSDipole3D`, `TSCircle3D`, `TSSphere3D`)
 
 | Terathon class | Lean target | Status | Notes |
 |---|---|---|---|
-| `RoundPoint2D/3D` | new `Brane.CGA` | ⬜ | `Cl(4,1)` — two extra null basis vectors |
-| `Dipole2D/3D`, `Circle2D/3D`, `Sphere3D` | new `Brane.CGA` | ⬜ | round-element blades; useful later for sphere/circle picking |
+| `RoundPoint2D/3D` | `Brane.CGA` | ✅ | `roundPoint2/3`; the Terathon two-null model is used (2D: `e₃²=e₄²=0`, `e₃·e₄=-1`; 3D: `e₄²=e₅²=0`, `e₄·e₅=-1`), so round points are proved null (`roundPoint2_sq`, `roundPoint3_sq`) |
+| `Dipole2D/3D`, `Circle2D/3D`, `Sphere3D` | `Brane.CGA` | ✅ | concrete blade constructors `dipole2`, `dipole3`, `circle2`, `circle3`, `sphere3` matching the Terathon README components |
+
+All of these are re-exported under the C++ spelling by
+`lean/Brane/Terathon.lean` (`Brane.Terathon`), which also provides the
+Mathlib aliases for `Vector2D/3D/4D`, `Point2D/3D`, `Matrix2D/3D/4D`,
+`Transform2D/3D`, `Quaternion`, and `DualNum`.
 
 ### What we already have (for orientation)
 
