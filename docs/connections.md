@@ -15,7 +15,10 @@ Everything is concrete: the manifold is the parameter plane
 `Point2 = ℝ × ℝ`, a vector field is a function `Point2 → Vel2`, and the
 metric of a graph is the first fundamental form `gramMatrix h` from
 `Brane.DiffGeom`. No abstract manifold is needed, but every definition
-matches the standard one.
+matches the standard one. Where useful, we read the same objects in the
+vector/matrix language of [`shooting-method.md`](shooting-method.md):
+`J`, `G = JᵀJ`, `H`, `∇h`, and the geodesic acceleration
+`a = -G⁻¹ (vᵀHv) ∇h`.
 
 The companion note on Lie algebras is [`lie-algebra.md`](lie-algebra.md).
 
@@ -116,6 +119,46 @@ def leviCivita (h : HeightFun) : AffineConnection :=
   covOfChristoffel (christoffel (gramMatrix h))
 ```
 
+### Matrix / vector form on a graph surface
+
+The shooting method in [`shooting-method.md`](shooting-method.md) works with
+the concrete matrix objects of the graph `σ(p) = (p.1, p.2, h p.1 p.2)`.
+The connection concepts above have direct matrix/vector readings in that
+language.
+
+| Connection object | Matrix / vector reading | Lean name |
+| --- | --- | --- |
+| tangent basis | columns of the Jacobian `J = [[1,0],[0,1],[∂ₓh,∂ᵧh]]` | `DiffGeom.jacobian` |
+| metric `g` | Gram matrix `G = JᵀJ = I + ∇h ∇hᵀ` | `DiffGeom.gramMatrix` |
+| metric inverse `g⁻¹` | `G⁻¹ = (1/det G) [[g₂₂,-g₁₂],[-g₁₂,g₁₁]]`, `det G = 1+|∇h|²` | `DiffGeom.det_gramMatrix_eq` |
+| metric derivative `∂_i g_{jl}` | derivative of `G` entries, built from first/second partials of `h` | `Conn.metricPartial` |
+| Christoffel correction | `Γ(p; X, Y)^k = ∑_{i,j} Γ^k_{ij}(p) X^i Y^j`, a velocity in `Vel2` | `Conn.christoffelCorr` |
+| covariant derivative | `(∇_X Y)(p) = dY_p(X(p)) + Γ(p; X(p), Y(p))` | `covOfChristoffel` / `AffineConnection.cov` |
+
+The key vector identity is that the Christoffel correction is bilinear in
+the two velocity inputs: it behaves like a matrix-valued quadratic form
+`(X, Y) ↦ Γ(X,Y)` with output in `Vel2 = Fin 2 → ℝ`. In components this is
+exactly the ordinary matrix/vector contraction
+
+```text
+Γ(p; X, Y) = ![ ∑ i j Γ⁰_{ij} X^i Y^j,  ∑ i j Γ¹_{ij} X^i Y^j ].
+```
+
+For a graph surface, the metric is the familiar Gram matrix from the
+shooting method,
+
+```text
+G(p) = gramMatrix h p =
+  !![1 + (∂ₓh)²,    ∂ₓh ∂ᵧh;
+     ∂ₓh ∂ᵧh,    1 + (∂ᵧh)²],
+```
+
+so the Levi-Civita connection of the graph is the flat directional
+derivative in parameter coordinates plus a correction computed from `G` and
+its first partial derivatives. The flat part is the "parameter-plane"
+calculus; the Christoffel correction is the curvature compensation required
+by the distorted map `G = JᵀJ`.
+
 The two defining properties are stated as the `sorry`ed geometric bridges
 `leviCivita_torsion_free` and `leviCivita_metric_compatible`, and the
 uniqueness statement is `leviCivita_unique` — the fundamental theorem of
@@ -139,15 +182,40 @@ the tensoriality statements from the Wikipedia page.
 
 ## 4. Parallel transport
 
-Fix a curve `γ : ℝ → Point2` and a field `V` along it. The **covariant
-derivative along `γ`** is
+Fix a curve `γ : ℝ → Point2` and a field `V` along it. In the
+vector/matrix language of the shooting method, `γ(t)` is a parameter-plane
+position and `V(t)` is a `Vel2` — a two-component vector
+`![V₀(t), V₁(t)]`. The curve velocity and componentwise acceleration are
+
+```lean
+def curveVelocity (γ : Curve) (t : ℝ) : Vel2 :=
+  ![deriv (fun s => (γ s).1) t, deriv (fun s => (γ s).2) t]
+
+def curveAccel (γ : Curve) (t : ℝ) : Vel2 :=
+  fun k => deriv (fun s => curveVelocity γ s k) t
+```
+
+The **covariant derivative along `γ`** is the ordinary componentwise time
+derivative plus the Christoffel correction:
 
 $$
 \frac{DV}{dt} = \dot V + \Gamma(\dot\gamma, V),
+\qquad
+\left(\frac{DV}{dt}\right)^k = \dot V^k + \sum_{i,j} \Gamma^k{}_{ij}(\gamma)\, \dot\gamma^i\, V^j.
 $$
 
-which is `covAlongChristoffel`. The field is **parallel** when this
-vanishes for every `t`:
+This is exactly `covAlongChristoffel`: `V̇` is the vector derivative, and
+`christoffelCorr Γ (γ t) (curveVelocity γ t) (V t)` is the same
+matrix/vector contraction as in §2.
+
+```lean
+def covAlongChristoffel (Γ : Point2 → Fin 2 → Mat22) (γ : Curve)
+    (V : FieldAlong γ) (t : ℝ) : Vel2 :=
+  fun k => deriv (fun s => V s k) t +
+    christoffelCorr Γ (γ t) (curveVelocity γ t) (V t) k
+```
+
+The field is **parallel** when this vanishes for every `t`:
 
 ```lean
 def isParallel (Γ : Point2 → Fin 2 → Mat22) (γ : Curve)
@@ -155,10 +223,16 @@ def isParallel (Γ : Point2 → Fin 2 → Mat22) (γ : Curve)
   ∀ t : ℝ, covAlongChristoffel Γ γ V t = 0
 ```
 
-Parallel transport solves the linear ODE `DV/dt = 0` with a prescribed
-initial vector. Existence and uniqueness are the Picard–Lindelöf theorem;
-they are stated as `parallelTransport_exists` (a documented `sorry`) and
-the transport field is built from it with `Classical.choose`:
+In matrix terms, parallel transport is the linear first-order ODE
+
+```text
+V̇(t) = - Γ(γ(t); γ̇(t), V(t)),
+V(t₀) = v₀.
+```
+
+Existence and uniqueness are the Picard–Lindelöf theorem; they are stated
+as `parallelTransport_exists` (a documented `sorry`) and the transport
+field is built from it with `Classical.choose`:
 
 ```lean
 noncomputable def parallelTransport (Γ) (γ) (t₀) (v₀) : FieldAlong γ :=
@@ -177,6 +251,8 @@ loop. The set of all such transport maps based at `p` is
 `holonomyGroup Γ p`; that the identity belongs to it is
 `id_mem_holonomyGroup`.
 
+### Geodesics as parallel velocity
+
 A **geodesic** is a curve that is parallel to itself:
 
 ```lean
@@ -184,11 +260,37 @@ def isGeodesic (Γ : Point2 → Fin 2 → Mat22) (γ : Curve) : Prop :=
   isParallel Γ γ (curveVelocity γ)
 ```
 
-The bridge `isGeodesic_leviCivita_iff_Shoot` identifies this Christoffel-
-symbol geodesic equation with the matrix equation
-`γ̈ = Shoot.geoAccel h γ γ̇` used by the numerical shooting method in
-`Brane.Shooting`. It is the concrete link between the connection picture
-and the code that actually integrates trajectories.
+Unfolding the definition gives the coordinate geodesic ODE
+
+```text
+γ̈^k + ∑_{i,j} Γ^k_{ij}(γ) γ̇^i γ̇^j = 0,
+i.e.  curveAccel γ t + Γ(γ t; γ̇(t), γ̇(t)) = 0.
+```
+
+On the graph surface, the Levi-Civita symbols are those of
+`G = gramMatrix h`. The shooting-method derivation solves the same equation
+in matrix form by projecting the lifted 3D acceleration onto the tangent
+plane:
+
+```text
+G a + (vᵀ H v) ∇h = 0,
+a = -G⁻¹ (vᵀ H v) ∇h = geoAccel h p v,
+```
+
+where `G = JᵀJ`, `H` is the Hessian of `h`, `v = γ̇`, and
+`vᵀHv = hessQuad h p v` (`Shoot.hessQuad`). The bridge theorem states that
+these two geodesic descriptions are the same:
+
+```lean
+theorem isGeodesic_leviCivita_iff_Shoot (h : HeightFun) (γ : Curve) :
+    isGeodesic (christoffel (gramMatrix h)) γ ↔
+      ∀ t : ℝ, curveAccel γ t = Shoot.geoAccel h (γ t) (curveVelocity γ t)
+```
+
+This is the concrete link between the connection picture and the code that
+actually integrates trajectories: `Shoot.field` stores `(v, a)` with
+`a = geoAccel h p v`, so the RK4/Euler shooters are numerical integrators
+of the Levi-Civita geodesic ODE.
 
 ## 5. Connections on vector bundles
 

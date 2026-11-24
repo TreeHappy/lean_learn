@@ -471,6 +471,81 @@ theorem e3_eq_normal_add_gradient (h : HeightFun) (p : Point2) :
 
 Thus `e₃ = n + ∇h`: `e₃` differs from `n` by a horizontal vector in `TₚΣ`, with equality iff `∇h = 0`. The decomposition `(d²/dt²)(σ ∘ γ) = J a + (vᵀ H v) e₃` uses the fixed ambient direction `e₃`; tangential projection annihilates the normal component and maps `e₃` to `∇h`, yielding `G a + (vᵀ H v) ∇h = 0`.
 
+## 2.6 Connection reading: parallel velocity
+
+The geodesic equation derived above has an equivalent connection-theoretic
+reading, formalized in [`connections.md`](connections.md) and
+`lean/Brane/Connections.lean` / `lean/Brane/ParallelTransport.lean`. It is
+the same matrix equation, viewed as "keep the velocity parallel to itself".
+
+### Covariant derivative in matrix/vector form
+
+For a curve `γ(t)` in the parameter plane and a vector field `V(t) : Vel2`
+along it, the covariant derivative is
+
+```text
+(DV/dt)^k = V̇^k + ∑_{i,j} Γ^k_{ij}(γ) γ̇^i V^j,
+i.e.  DV/dt = V̇ + Γ(γ; γ̇, V).
+```
+
+In Lean this is `Trans.covAlongChristoffel`: the first term is ordinary
+componentwise differentiation of a `Vel2`, and the second term is the
+Christoffel correction `Conn.christoffelCorr`, the same kind of bilinear
+vector contraction used throughout the shooting method.
+
+### Parallel transport
+
+`V` is **parallel** when `DV/dt = 0` (`Trans.isParallel`). Parallel
+transport is the linear ODE
+
+```text
+V̇(t) = -Γ(γ(t); γ̇(t), V(t)),   V(t₀) = v₀,
+```
+
+whose solution is the transport map `Trans.transportMap Γ γ s t : Vel2 → Vel2`.
+The map is linear and invertible along reversed curves
+(`transportMap_linear`, `transportMap_reverse`, stated as `sorry` bridges in
+the Lean file).
+
+### Geodesic = velocity transported by itself
+
+A geodesic is a curve whose velocity field is parallel along itself:
+
+```lean
+def isGeodesic (Γ : Point2 → Fin 2 → Mat22) (γ : Curve) : Prop :=
+  isParallel Γ γ (curveVelocity γ)
+```
+
+Unfolding gives
+
+```text
+γ̈ + Γ(γ; γ̇, γ̇) = 0.
+```
+
+For the graph-surface Levi-Civita connection, whose symbols come from the
+Gram matrix `G = gramMatrix h = JᵀJ`, this is the same equation as the
+shooting-method Gram system. The Lean bridge theorem states the equivalence
+exactly:
+
+```lean
+theorem isGeodesic_leviCivita_iff_Shoot (h : HeightFun) (γ : Curve) :
+    isGeodesic (christoffel (gramMatrix h)) γ ↔
+      ∀ t : ℝ, curveAccel γ t = Shoot.geoAccel h (γ t) (curveVelocity γ t)
+```
+
+Reading the shooting code through this lens:
+
+| Shooting object | Connection reading |
+| --- | --- |
+| `gramMatrix h p` / `gramEntries` | metric `G = JᵀJ` whose Christoffel symbols define `leviCivita h` |
+| `hessQuad h p v` | directional curvature `vᵀHv`, the scalar in the normal projection |
+| `geoAccel h p v = -G⁻¹ (vᵀHv) ∇h` | Levi-Civita geodesic acceleration `-Γ(γ; γ̇, γ̇)` in matrix form |
+| `field h s = ⟨v, geoAccel h p v⟩` | first-order form of the geodesic ODE |
+| `shoot step h s₀ dt n` | numerical parallel-velocity integration (Euler/RK4) |
+
+So `shoot` is not just "integrate an acceleration"; it is a discrete
+transport of the velocity by the Levi-Civita connection of the surface.
+
 ---
 
 ## 3. Shooting = "fire and integrate"
@@ -649,6 +724,7 @@ are declared, nothing is proved about them. Here is the honest ledger:
 | Jacobians of tangents carry the Hessian rows | **proved** | `jacobianTangentX_apply`, `jacobianTangentY_apply` |
 | Plane/bowl/saddle partials up to second order | **proved** | `partial*_planeHeight`, `partial*_bowlHeight`, `partial*_saddleHeight` |
 | `geoAccel` solves the geodesic condition `G (d²γ/dt²) + (vᵀHv)∇h = 0` | proved algebraically (Lean proof in §2) | `Shooting.lean` (`geoAccel_solves_geodesic`, still `sorry` there) |
+| Christoffel geodesic ↔ `geoAccel` shooting ODE | declared (`sorry`) | `ParallelTransport.lean` (`isGeodesic_leviCivita_iff_Shoot`) |
 | Euler converges to the geodesic as `dt → 0` | declared | future |
 | RK4 is fourth-order accurate | declared | future |
 | discrete trajectory hugs the true geodesic | declared | future |
@@ -661,18 +737,18 @@ waiting for its proofs.
 
 ## 6. Cheat sheet: file ↔ concept
 
-| `Brane/Shooting.lean` | Plain-language description |
-|---|---|
-| `ShotState` | position and velocity of the marble, both in the parameter plane |
-| `field h s` | the `(v, a)` right-hand side of the ODE: velocity plus geodesic acceleration |
-| `geoAccel h p v` | the steering acceleration `-(G⁻¹ ((vᵀ H v) ∇h))` (Lean writes `*ᵥ` for the matrix product and `•` for scalar multiplication — see the notation table in §1) |
-| `StepMethod` | the shared type of one-step integrators: surface, state, time step → next state |
-| `eulerStep` / `rk4Step` | the two integrators; identical interface |
-| `shoot step h s₀ dt n` | `n`-fold iteration of the stepper, starting from `s₀` |
-| `muzzle p dir speed` | the initial state of a trajectory |
-| `impactPoint h s` | the 3D surface point `(x, y, h(x,y))` at a state |
-| `gradientVec`, `hessQuad` | the parameter gradient and the directional curvature of `h` |
-| `DiffGeom.gramMatrix`, `DiffGeom.hessian` | the metric matrix `G` and the Hessian `H`, evaluated at a point |
+| `Brane/Shooting.lean` | Plain-language description | Connection reading |
+|---|---|---|
+| `ShotState` | position and velocity of the marble, both in the parameter plane | state `(γ, γ̇)` of the geodesic ODE |
+| `field h s` | the `(v, a)` right-hand side of the ODE: velocity plus geodesic acceleration | first-order Levi-Civita geodesic field |
+| `geoAccel h p v` | the steering acceleration `-(G⁻¹ ((vᵀ H v) ∇h))` (Lean writes `*ᵥ` for the matrix product and `•` for scalar multiplication — see the notation table in §1) | matrix form of `-Γ(γ; γ̇, γ̇)` |
+| `StepMethod` | the shared type of one-step integrators: surface, state, time step → next state | one-step numerical transport scheme |
+| `eulerStep` / `rk4Step` | the two integrators; identical interface | first/fourth-order discrete transport |
+| `shoot step h s₀ dt n` | `n`-fold iteration of the stepper, starting from `s₀` | numerical integration of parallel velocity |
+| `muzzle p dir speed` | the initial state of a trajectory | initial point and velocity for transport |
+| `impactPoint h s` | the 3D surface point `(x, y, h(x,y))` at a state | lifted point `σ(γ(t))` |
+| `gradientVec`, `hessQuad` | the parameter gradient and the directional curvature of `h` | metric/Hessian data entering `Γ` on a graph |
+| `DiffGeom.gramMatrix`, `DiffGeom.hessian` | the metric matrix `G` and the Hessian `H`, evaluated at a point | metric and second-fundamental-form ingredients |
 
 ---
 
