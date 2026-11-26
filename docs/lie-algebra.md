@@ -30,9 +30,9 @@ product.
 > * **alternating**: $[x,x] = 0$, equivalently $[x,y] = -[y,x]$;
 > * satisfies the **Jacobi identity**:
 >
-> $$
+> ```math
 > [x,[y,z]] + [y,[z,x]] + [z,[x,y]] = 0.
-> $$
+> ```
 
 Mathlib splits this into two classes. `LieRing` is the additive-group version,
 with fields `add_lie`, `lie_add`, `lie_self`, and `leibniz_lie` (the last is
@@ -42,13 +42,13 @@ multiplication, `lie_smul`.
 The equivalent **Leibniz form** of Jacobi is the one that matters for
 derivations:
 
-$$
+```math
 [x,[y,z]] = [[x,y],z] + [y,[x,z]].
-$$
+```
 
 > [!TIP]
 > **Why two forms?** The cyclic sum is the textbook statement; the Leibniz
-> form says "$\operatorname{ad}_x$ differentiates the bracket". The second is
+> form says "$\mathrm{ad}_x$ differentiates the bracket". The second is
 > exactly what the connection Leibniz rule needs, so Lean proves that form and
 > derives the first.
 
@@ -58,9 +58,9 @@ $$
 
 For `Vec3` vectors $u, v$ (that is, $u, v \in \mathbb{R}^3$), define
 
-$$
+```math
 u \times v = (u_1 v_2 - u_2 v_1,\; u_2 v_0 - u_0 v_2,\; u_0 v_1 - u_1 v_0).
-$$
+```
 
 This is `Brane.DiffGeom.cross`, transported from Mathlib's `crossProduct` on
 `Fin 3 → ℝ`. We register it as the bracket:
@@ -78,8 +78,8 @@ real theorem in the file:
 | additivity, right slot | `bracket_add_right` | $[u,v+v'] = [u,v] + [u,v']$ |
 | alternation | `bracket_self` | $[u,u] = 0$ |
 | antisymmetry | `bracket_anticomm` | $[u,v] = -[v,u]$ |
-| scalar linearity, left | `bracket_smul_left` | $[t\,u,v] = t\,[u,v]$ |
-| scalar linearity, right | `bracket_smul_right` | $[u,t\,v] = t\,[u,v]$ |
+| scalar linearity, left | `bracket_smul_left` | $[t\thinspace u,v] = t\thinspace [u,v]$ |
+| scalar linearity, right | `bracket_smul_right` | $[u,t\thinspace v] = t\thinspace [u,v]$ |
 | Jacobi | `bracket_jacobi` | $[u,[v,w]] + [v,[w,u]] + [w,[u,v]] = 0$ |
 | Jacobi, Leibniz form | `bracket_leibniz` | $[u,[v,w]] = [[u,v],w] + [v,[u,w]]$ |
 
@@ -122,7 +122,7 @@ then make `Vec3` a genuine Lie algebra, with $[u,v] = u \times v$.
 
 > [!NOTE]
 > **Definition (adjoint action).** For fixed $u$, the map
-> $\operatorname{ad}_u : v \mapsto [u,v]$ is linear:
+> $\mathrm{ad}_u : v \mapsto [u,v]$ is linear:
 
 ```lean
 def crossAdjoint (u : Vec3) : Vec3 →ₗ[ℝ] Vec3 where
@@ -131,7 +131,7 @@ def crossAdjoint (u : Vec3) : Vec3 →ₗ[ℝ] Vec3 where
   map_smul' t v := Brane.GA.cross_smul_right u t v
 ```
 
-The Jacobi identity says exactly that $\operatorname{ad}_u$ is a **derivation**
+The Jacobi identity says exactly that $\mathrm{ad}_u$ is a **derivation**
 of the bracket:
 
 ```lean
@@ -164,7 +164,7 @@ Two facts connect it to the bracket:
   `LieAlgebra.Orthogonal.so (Fin 3) ℝ`;
 * `hatMatrix_commutator` — $\widehat{[u,v]} = [\widehat{u},\widehat{v}]$,
   where the right-hand bracket is the matrix commutator
-  $\widehat{u}\,\widehat{v} - \widehat{v}\,\widehat{u}$.
+  $\widehat{u}\thinspace \widehat{v} - \widehat{v}\thinspace \widehat{u}$.
 
 ```lean
 theorem hatMatrix_mem_so (u : Vec3) :
@@ -272,7 +272,7 @@ is the entry-reading map described in §4.
 | `crossLieRing` | `Vec3` is a Lie ring | the bracket laws |
 | `crossLieAlgebra` | `Vec3` is a real Lie algebra | `cross_smul_right` |
 | `crossAdjoint u` | the linear map $v \mapsto [u,v]$ | `cross_add_right`, `cross_smul_right` |
-| `crossAdjoint_leibniz` | $\operatorname{ad}_u$ is a derivation | `bracket_leibniz` |
+| `crossAdjoint_leibniz` | $\mathrm{ad}_u$ is a derivation | `bracket_leibniz` |
 | `hatMatrix u` | the skew-symmetric matrix of $u$ | matrix literal |
 | `hatMatrix_mem_so` | its image lies in $\mathfrak{so}(3)$ | entry check |
 | `hatMatrix_commutator` | hat turns $\times$ into the matrix commutator | entry check |

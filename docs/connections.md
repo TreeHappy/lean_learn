@@ -19,7 +19,7 @@ chain rule.
 Where useful, we read the same objects in the vector/matrix language of
 [`shooting-method.md`](shooting-method.md): $J$, $G = J^{\mathsf T}J$, $H$,
 $\nabla h$, and the geodesic acceleration
-$a = -G^{-1}(v^{\mathsf T}Hv)\,\nabla h$.
+$a = -G^{-1}(v^{\mathsf T}Hv)\thinspace \nabla h$.
 
 > [!NOTE]
 > **The cast.** This note explains the four objects that the Lean modules
@@ -71,7 +71,7 @@ linearity lemmas used by the connection axioms are proved in full:
 | `dirDeriv_smul_direction` | linearity in the direction (scalar) |
 | `dirDeriv_add_Y` | linearity in the field (sum) |
 | `dirDeriv_smul_Y` | linearity in the field (scalar) |
-| `dirDeriv_smul_scalar` | product rule $d(fY) = (df)\,Y + f\,dY$ |
+| `dirDeriv_smul_scalar` | product rule $d(fY) = (df)\thinspace Y + f\thinspace dY$ |
 
 The product rule is the one the connection axioms actually consume:
 
@@ -120,8 +120,8 @@ structure AffineConnection where
 ```
 
 The two $C^\infty$-linearity laws are exactly the two Wikipedia axioms:
-$\nabla_{fX}Y = f\,\nabla_X Y$ and
-$\nabla_X(fY) = (\partial_X f)\,Y + f\,\nabla_X Y$.
+$\nabla_{fX}Y = f\thinspace \nabla_X Y$ and
+$\nabla_X(fY) = (\partial_X f)\thinspace Y + f\thinspace \nabla_X Y$.
 
 > [!NOTE]
 > **Example (flat connection).** The simplest connection is ordinary
@@ -164,10 +164,10 @@ Every proof is a direct rewrite with the corresponding linearity lemma of §1.
 > graph it is `gramMatrix h`. Write $\partial_i g_{jl}$ for the partial
 > derivative of the metric. The **Christoffel symbols of the second kind** are
 >
-> $$
+> ```math
 > \Gamma^k{}_{ij} = \tfrac12\,(g^{-1})^{kl}
 >   \bigl(\partial_i g_{jl} + \partial_j g_{il} - \partial_l g_{ij}\bigr),
-> $$
+> ```
 >
 > which is `christoffel g p k i j` in Lean. They are symmetric in the lower
 > indices whenever the metric is symmetric (`christoffel_symm`).
@@ -216,11 +216,11 @@ direct matrix/vector readings in that language.
 
 | Connection object | Matrix / vector reading | Lean name |
 | --- | --- | --- |
-| tangent basis | columns of the Jacobian $J = \begin{bmatrix}1&0\\0&1\\ \partial_x h & \partial_y h\end{bmatrix}$ | `DiffGeom.jacobian` |
-| metric $g$ | Gram matrix $G = J^{\mathsf T}J = I + \nabla h\,\nabla h^{\mathsf T}$ | `DiffGeom.gramMatrix` |
-| metric inverse $g^{-1}$ | $G^{-1} = \frac{1}{\det G}\begin{bmatrix}g_{22}&-g_{12}\\-g_{12}&g_{11}\end{bmatrix}$, with $\det G = 1+\lVert\nabla h\rVert^2$ | `DiffGeom.det_gramMatrix_eq` |
+| tangent basis | columns of the Jacobian $J$: $(1,0,\partial_x h)$ and $(0,1,\partial_y h)$ | `DiffGeom.jacobian` |
+| metric $g$ | Gram matrix $G = J^{\mathsf T}J = I + \nabla h\thinspace \nabla h^{\mathsf T}$ | `DiffGeom.gramMatrix` |
+| metric inverse $g^{-1}$ | entries $g^{11} = g_{22}/\det G$, $g^{12} = g^{21} = -g_{12}/\det G$, $g^{22} = g_{11}/\det G$, with $\det G = 1+\lVert\nabla h\rVert^2$ | `DiffGeom.det_gramMatrix_eq` |
 | metric derivative $\partial_i g_{jl}$ | derivative of $G$ entries, built from first/second partials of $h$ | `Conn.metricPartial` |
-| Christoffel correction | $\Gamma(p;X,Y)^k = \sum_{i,j}\Gamma^k{}_{ij}(p)\,X^iY^j$, a velocity in `Vel2` | `Conn.christoffelCorr` |
+| Christoffel correction | $\Gamma(p;X,Y)^k = \sum_{i,j}\Gamma^k{}_{ij}(p)\thinspace X^iY^j$, a velocity in `Vel2` | `Conn.christoffelCorr` |
 | covariant derivative | $(\nabla_X Y)(p) = dY_p(X(p)) + \Gamma(p;X(p),Y(p))$ | `covOfChristoffel` / `AffineConnection.cov` |
 
 The key vector identity is that the Christoffel correction is bilinear in the
@@ -228,21 +228,21 @@ two velocity inputs: it behaves like a matrix-valued quadratic form
 $(X,Y) \mapsto \Gamma(X,Y)$ with output in `Vel2` $= \mathbb{R}^2$. In
 components this is exactly the ordinary matrix/vector contraction
 
-$$
+```math
 \Gamma(p;X,Y) = \left(\sum_{i,j}\Gamma^0{}_{ij}X^iY^j,\;
                         \sum_{i,j}\Gamma^1{}_{ij}X^iY^j\right).
-$$
+```
 
 For a graph surface, the metric is the familiar Gram matrix from the shooting
 method,
 
-$$
-G(p) = \operatorname{gramMatrix} h\,p =
+```math
+G(p) = \mathrm{gramMatrix}\thinspace h\,p =
 \begin{bmatrix}
 1 + (\partial_x h)^2 & \partial_x h\,\partial_y h\\[2pt]
 \partial_x h\,\partial_y h & 1 + (\partial_y h)^2
 \end{bmatrix},
-$$
+```
 
 so the Levi-Civita connection of the graph is the flat directional derivative
 in parameter coordinates plus a correction computed from $G$ and its first
@@ -272,13 +272,13 @@ def lieBracketParam (X Y : ParamField) : ParamField :=
 > **Definition (torsion and curvature).** The **torsion** and **curvature**
 > of an affine connection are
 >
-> $$
+> ```math
 > T(X,Y) = \nabla_X Y - \nabla_Y X - [X,Y],
-> $$
+> ```
 >
-> $$
+> ```math
 > R(X,Y)Z = \nabla_X\nabla_Y Z - \nabla_Y\nabla_X Z - \nabla_{[X,Y]}Z,
-> $$
+> ```
 
 ```lean
 def torsion (D : AffineConnection) (X Y : ParamField) : ParamField :=
@@ -318,12 +318,12 @@ def curveAccel (γ : Curve) (t : ℝ) : Vel2 :=
 > derivative** is the ordinary componentwise time derivative plus the
 > Christoffel correction:
 >
-> $$
+> ```math
 > \left(\frac{DV}{dt}\right)^k
 >   = \dot V^k + \sum_{i,j}\Gamma^k{}_{ij}(\gamma)\,\dot\gamma^i V^j,
 > \qquad\text{i.e.}\qquad
 > \frac{DV}{dt} = \dot V + \Gamma(\gamma;\dot\gamma,V).
-> $$
+> ```
 
 ```lean
 def covAlongChristoffel (Γ : Point2 → Fin 2 → Mat22) (γ : Curve)
@@ -348,10 +348,10 @@ def isParallel (Γ : Point2 → Fin 2 → Mat22) (γ : Curve)
 
 In matrix terms, parallel transport is the linear first-order ODE
 
-$$
+```math
 \dot V(t) = -\Gamma(\gamma(t);\dot\gamma(t),V(t)),
 \qquad V(t_0) = v_0.
-$$
+```
 
 Existence and uniqueness are the Picard–Lindelöf theorem; they are stated as
 `parallelTransport_exists` (a documented `sorry`) and the transport field is
@@ -438,25 +438,25 @@ def isGeodesic (Γ : Point2 → Fin 2 → Mat22) (γ : Curve) : Prop :=
 
 Unfolding the definition gives the coordinate geodesic ODE
 
-$$
+```math
 \ddot\gamma^k + \sum_{i,j}\Gamma^k{}_{ij}(\gamma)\,\dot\gamma^i\dot\gamma^j = 0,
 \qquad\text{i.e.}\qquad
 \ddot\gamma(t) + \Gamma(\gamma(t);\dot\gamma(t),\dot\gamma(t)) = 0.
-$$
+```
 
 On the graph surface, the Levi-Civita symbols are those of
-$G = \operatorname{gramMatrix} h$. The shooting-method derivation solves the
+$G = \mathrm{gramMatrix}\thinspace h$. The shooting-method derivation solves the
 same equation in matrix form by projecting the lifted 3D acceleration onto the
 tangent plane:
 
-$$
+```math
 G\,a + (v^{\mathsf T}Hv)\,\nabla h = 0,
 \qquad
-a = -G^{-1}(v^{\mathsf T}Hv)\,\nabla h = \texttt{geoAccel } h\,p\,v,
-$$
+a = -G^{-1}(v^{\mathsf T}Hv)\,\nabla h = \text{geoAccel } h\,p\,v,
+```
 
 where $G = J^{\mathsf T}J$, $H$ is the Hessian of $h$, $v = \dot\gamma$, and
-$v^{\mathsf T}Hv = \texttt{hessQuad } h\,p\,v$ (`Shoot.hessQuad`). The bridge
+$v^{\mathsf T}Hv = \text{hessQuad } h\thinspace p\thinspace v$ (`Shoot.hessQuad`). The bridge
 theorem states that these two geodesic descriptions are the same:
 
 ```lean
@@ -468,7 +468,7 @@ theorem isGeodesic_leviCivita_iff_Shoot (h : HeightFun) (γ : Curve) :
 
 This is the concrete link between the connection picture and the code that
 actually integrates trajectories: `Shoot.field` stores $(v,a)$ with
-$a = \texttt{geoAccel } h\,p\,v$, so the RK4/Euler shooters are numerical
+$a = \text{geoAccel } h\thinspace p\thinspace v$, so the RK4/Euler shooters are numerical
 integrators of the Levi-Civita geodesic ODE.
 
 | Shooting object | Connection reading |
@@ -583,7 +583,7 @@ them is proved.
 | `dirDeriv Y p v` | ordinary directional derivative | $dY_p(v)$ |
 | `AffineConnection` | the two connection axioms | $\nabla_X Y$ |
 | `flatConn` | the Euclidean connection | $dY(X)$ |
-| `christoffel g` | the symbols of a metric | $\tfrac12\,g^{-1}(\partial g + \partial g - \partial g)$ |
+| `christoffel g` | the symbols of a metric | $\tfrac12\thinspace g^{-1}(\partial g + \partial g - \partial g)$ |
 | `christoffelCorr Γ p X Y` | the correction $\Gamma(X,Y)$ | $\sum_{i,j}\Gamma^k{}_{ij}X^iY^j$ |
 | `covOfChristoffel Γ` | flat derivative plus correction | $dY(X) + \Gamma(X,Y)$ |
 | `leviCivita h` | the graph's metric connection | symbols of `gramMatrix h` |

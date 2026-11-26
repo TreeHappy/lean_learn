@@ -42,10 +42,10 @@ That is a global chart in the usual graph-surface setting: the parameter
 domain is `Point2` $= \mathbb{R} \times \mathbb{R}$, and $h$ lifts it to the
 manifold. In the notation of the shooting note,
 
-$$
-\sigma := \operatorname{graph} h, \qquad
+```math
+\sigma := \mathrm{graph}\thinspace h, \qquad
 \sigma(x,y) = (x, y, h(x,y)).
-$$
+```
 
 > [!IMPORTANT]
 > **The local, inverse-facing question.** The graph chart goes *parameter
@@ -61,15 +61,15 @@ $$
 In 2D texture mapping, a surface patch is parameterized by coordinates
 $(u,v)$ in a flat domain. A texture lookup evaluates a function
 
-$$
+```math
 T : U \subset \mathbb{R}^2 \to \mathrm{Color}
-$$
+```
 
 while the surface embedding evaluates
 
-$$
+```math
 \varphi : U \subset \mathbb{R}^2 \to M \subset \mathbb{R}^3.
-$$
+```
 
 The useful graphics questions map directly to differential geometry:
 
@@ -95,10 +95,10 @@ supplies the canonical construction around a point.
 > point $p \in M$, the exponential map sends a tangent vector to the endpoint
 > of a geodesic:
 >
-> $$
+> ```math
 > \exp_p : V \subset T_pM \to M,
 > \qquad \exp_p(v) = \gamma_v(1),
-> $$
+> ```
 >
 > where $\gamma_v$ is the geodesic with $\gamma_v(0) = p$ and
 > $\gamma_v'(0) = v$.
@@ -106,15 +106,15 @@ supplies the canonical construction around a point.
 If we choose an orthonormal basis $(e_1,e_2)$ of $T_pM$, then every tangent
 vector can be written as
 
-$$
+```math
 v = u\,e_1 + v'\,e_2, \qquad (u,v') \in \mathbb{R}^2,
-$$
+```
 
 and the normal chart is
 
-$$
+```math
 \Phi_p(u,v') = \exp_p(u\,e_1 + v'\,e_2).
-$$
+```
 
 This is a 2D parameterized mapping around $p$: the flat UV-like domain is a
 disk in $\mathbb{R}^2$, and the image is a geodesic patch on the manifold.
@@ -145,9 +145,9 @@ Texture mapping cares about how much a flat texel is stretched on the surface.
 The same quantity is measured by the pullback metric. For a chart
 $\Phi : U \to M$, let
 
-$$
+```math
 G_{ij}(u,v) = g(D\Phi_u e_i,\, D\Phi_u e_j).
-$$
+```
 
 Then:
 
@@ -167,7 +167,7 @@ canonical curvature-aware starting point.
 
 A chart is represented as a map on graph parameter coordinates. Its Jacobian
 is a $2 \times 2$ matrix, and its pullback metric is
-$J^{\mathsf T} G\, J$:
+$J^{\mathsf T} G\thinspace  J$:
 
 ```lean
 abbrev ParamChart : Type := Point2 → Point2
@@ -217,7 +217,7 @@ theorem isIsometricAt.isEqualAreaAt {h : HeightFun} {φ : ParamChart} {u : Point
 > **Reading the pullback.** `chartJacobian φ u` is the derivative of the
 > chart; `gramMatrix h (φ u)` is the surface metric at the chart's image
 > point; and `pullbackGram` is the metric a texture would actually feel. This
-> is exactly the $J^{\mathsf T} G\,J$ of the shooting note, with $J$ now the
+> is exactly the $J^{\mathsf T} G\thinspace J$ of the shooting note, with $J$ now the
 > chart Jacobian rather than the graph Jacobian.
 
 ---
@@ -307,7 +307,7 @@ def normalParamChart (h : HeightFun) (P : RadialProfile) (p : Point2)
 
 > [!TIP]
 > **A prototype.** Pick $(x_0,y_0)$, build an orthonormal basis in
-> $T_p(\operatorname{graph} h)$, shoot geodesics for a grid of tangent vectors
+> $T_p(\mathrm{graph}\thinspace h)$, shoot geodesics for a grid of tangent vectors
 > $(u,v') \in [-r,r]^2$, and render the resulting patch. Coloring the patch by
 > $\det(G)$ or stretch eigenvalues visualizes chart distortion exactly like a
 > texture-mapping debug view.
@@ -326,7 +326,7 @@ The cartographic convention is usually "surface to plane"; the exponential-map
 view is often "plane/tangent to surface". For chart design it is useful to
 keep both directions in mind:
 
-$$
+```math
 \begin{array}{ccc}
 \text{parameter domain } U \subset \mathbb{R}^2
   & \longleftrightarrow &
@@ -334,7 +334,7 @@ $$
 \text{coordinates} && \text{manifold point} \\
 \text{texture UV} && \text{surface location}
 \end{array}
-$$
+```
 
 ### Radial profiles
 
@@ -412,11 +412,11 @@ theorem azimuthalParamChart_zero (P : RadialProfile) (p : Point2) (e1 e2 : Vel2)
 
 The azimuthal family suggests making the chart choice explicit as
 
-$$
+```math
 \Phi_p(r,\theta) = E_p\bigl(\rho(r)\,e_\theta\bigr),
 \qquad\text{or}\qquad
 \Phi_p(u,v) = E_p\bigl(\sigma(u,v)\bigr),
-$$
+```
 
 where $E_p$ is the exponential/geodesic map, $e_\theta$ is a direction in
 $T_pM$, and $\rho$/$\sigma$ selects the radial metric: identity for
@@ -464,7 +464,7 @@ selection criteria:
 
 | Property | Map-projection term | Chart metric condition | Use when |
 | --- | --- | --- | --- |
-| Conformal | conformal / orthomorphic | $G(u,v) = \lambda(u,v)\,I$ | preserving angles, local shape, or grid orthogonality matters |
+| Conformal | conformal / orthomorphic | $G(u,v) = \lambda(u,v)\thinspace I$ | preserving angles, local shape, or grid orthogonality matters |
 | Equal-area | equal-area / authalic | $\det(G(u,v)) = \text{const}$ | sampling density, mass, or texture texel area should be uniform |
 | Equidistant | equidistant | distances preserved along selected lines | radial distance from $p$, or distances along a curve/grid family, matter |
 | Compromise | compromise | no single invariant; minimize combined distortion | visualization or texture mapping over a larger patch |
@@ -496,16 +496,16 @@ several low-distortion charts rather than forcing one chart to cover a large
 region. This connects to texture atlases and to the cut locus/injectivity
 limit of normal coordinates.
 
-$$
+```math
 \text{atlas} = \{(U_i, \Phi_i)\}
 \qquad\text{with small distortion per chart}
-$$
+```
 
-$$
+```math
 \text{seams / cut boundaries}
 \;\longleftrightarrow\;
 \text{chart transitions / overlap maps}
-$$
+```
 
 ---
 
@@ -518,7 +518,7 @@ The original plan, with the current status of each step:
    *Status:* represented computationally by `expShoot`; the analytic interface
    is still open.
 2. **Graph-surface specialization.** Use the existing geodesic ODE/shooting
-   definitions to define a computational exponential map on $\operatorname{graph} h$.
+   definitions to define a computational exponential map on $\mathrm{graph}\thinspace h$.
    *Status:* `expShoot`.
 3. **Normal chart.** Package an orthonormal basis of $T_pM$ and define
    $\Phi_p(u,v')$.
@@ -563,13 +563,13 @@ proved.
 | `SurfaceChart` | a chart into ambient space | `Point2 → Point3` |
 | `toSurface h φ` | compose a parameter chart with `graph h` | $\sigma \circ \varphi$ |
 | `chartJacobian φ u` | derivative of the chart | $D\varphi$ |
-| `pullbackGram h φ u` | texture-space metric | $(D\varphi)^{\mathsf T} G\,(D\varphi)$ |
+| `pullbackGram h φ u` | texture-space metric | $(D\varphi)^{\mathsf T} G\thinspace (D\varphi)$ |
 | `areaScale h φ u` | local texel area | $\det(\text{pullbackGram})$ |
 | `isConformalAt` | angles preserved | $G = \lambda I$ |
 | `isEqualAreaAt` | area preserved | $\det G = 1$ |
 | `isIsometricAt` | lengths and angles preserved | $G = I$ |
 | `RadialProfile` | radial reparameterization of an azimuthal chart | $\mathbb{R} \to \mathbb{R}$, fixes $0$ |
-| `azimuthalUV P u` | Cartesian UV → profiled radius + direction | $(\rho(r)\cos\theta,\ \rho(r)\sin\theta)$ |
+| `azimuthalUV P u` | Cartesian UV → profiled radius + direction | $(\rho(r)\cos\theta,\thinspace \rho(r)\sin\theta)$ |
 | `azimuthalParamChart P p e1 e2` | centered chart in parameter coordinates | $p + a_1 e_1 + a_2 e_2$ |
 | `expShoot h p v dt n` | computational $\exp_p(v)$ | RK4 geodesic shot |
 | `normalParamChart h P p e1 e2` | normal chart from a UV profile | $\exp_p$ on profiled UV |
@@ -580,12 +580,12 @@ proved.
 ## 10. Open questions
 
 * Should the primary object be a chart into parameter space $(x,y)$ or directly
-  into the embedded surface $\operatorname{graph} h\,(x,y)$?
+  into the embedded surface $\mathrm{graph}\thinspace h\thinspace (x,y)$?
 * For graph surfaces, how does the graph chart $(x,y)$ compare to the normal
   chart around $p$ as a texture parameterization?
 * What is the right Lean representation of $T_pM$: a subtype of
   $\mathbb{R}^3$ tangent to the graph, or the parameter-plane velocity space
-  pushed forward by $d(\operatorname{graph} h)$?
+  pushed forward by $d(\mathrm{graph}\thinspace h)$?
 * How should cut locus / injectivity radius be represented in a computational
   prototype?
 * Can the existing `ParallelTransport` code produce a stable frame for Fermi
