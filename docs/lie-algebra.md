@@ -1,10 +1,10 @@
-# Lie Algebras and `so(3)`
+# Lie Algebras and $\mathfrak{so}(3)$
 
 This note is the algebraic companion to [`connections.md`](connections.md). The
 bracket of vector fields and the torsion of a connection are Lie-algebraic
-objects, and the cross product on `ℝ³` is the smallest interesting example.
-Everything below cites the actual declarations in `lean/Brane/LieAlgebra.lean`
-(namespace `Brane.Lie`).
+objects, and the cross product on $\mathbb{R}^3$ is the smallest interesting
+example. Everything below cites the actual declarations in
+`lean/Brane/LieAlgebra.lean` (namespace `Brane.Lie`).
 
 The Lean code does **not** reinvent Lie algebras. It instantiates Mathlib's
 `LieRing` / `LieAlgebra` classes with the concrete vector space `Vec3` from
@@ -24,14 +24,15 @@ product.
 
 > [!IMPORTANT]
 > **Definition (Lie algebra).** A **Lie algebra** over a field is a vector
-> space `L` with a bilinear map `⁅·, ·⁆ : L × L → L` (the *bracket*) that is
+> space $L$ with a bilinear map $[\cdot,\cdot] : L \times L \to L$ (the
+> *bracket*) that is
 >
-> * **alternating**: `⁅x, x⁆ = 0`, equivalently `⁅x, y⁆ = -⁅y, x⁆`;
+> * **alternating**: $[x,x] = 0$, equivalently $[x,y] = -[y,x]$;
 > * satisfies the **Jacobi identity**:
 >
-> ```text
-> ⁅x, ⁅y, z⁆⁆ + ⁅y, ⁅z, x⁆⁆ + ⁅z, ⁅x, y⁆⁆ = 0.
-> ```
+> $$
+> [x,[y,z]] + [y,[z,x]] + [z,[x,y]] = 0.
+> $$
 
 Mathlib splits this into two classes. `LieRing` is the additive-group version,
 with fields `add_lie`, `lie_add`, `lie_self`, and `leibniz_lie` (the last is
@@ -41,25 +42,25 @@ multiplication, `lie_smul`.
 The equivalent **Leibniz form** of Jacobi is the one that matters for
 derivations:
 
-```text
-⁅x, ⁅y, z⁆⁆ = ⁅⁅x, y⁆, z⁆ + ⁅y, ⁅x, z⁆⁆.
-```
+$$
+[x,[y,z]] = [[x,y],z] + [y,[x,z]].
+$$
 
 > [!TIP]
 > **Why two forms?** The cyclic sum is the textbook statement; the Leibniz
-> form says "`ad x` differentiates the bracket". The second is exactly what
-> the connection Leibniz rule needs, so Lean proves that form and derives the
-> first.
+> form says "$\operatorname{ad}_x$ differentiates the bracket". The second is
+> exactly what the connection Leibniz rule needs, so Lean proves that form and
+> derives the first.
 
 ---
 
-## 2. The cross product on `ℝ³`
+## 2. The cross product on $\mathbb{R}^3$
 
-For `u, v : Vec3 = EuclideanSpace ℝ (Fin 3)`, define
+For `Vec3` vectors $u, v$ (that is, $u, v \in \mathbb{R}^3$), define
 
-```text
-u × v = (u₁ v₂ - u₂ v₁,  u₂ v₀ - u₀ v₂,  u₀ v₁ - u₁ v₀).
-```
+$$
+u \times v = (u_1 v_2 - u_2 v_1,\; u_2 v_0 - u_0 v_2,\; u_0 v_1 - u_1 v_0).
+$$
 
 This is `Brane.DiffGeom.cross`, transported from Mathlib's `crossProduct` on
 `Fin 3 → ℝ`. We register it as the bracket:
@@ -73,14 +74,14 @@ real theorem in the file:
 
 | Law | Lean name | Statement |
 | --- | --- | --- |
-| additivity, left slot | `bracket_add_left` | `⁅u + u', v⁆ = ⁅u, v⁆ + ⁅u', v⁆` |
-| additivity, right slot | `bracket_add_right` | `⁅u, v + v'⁆ = ⁅u, v⁆ + ⁅u, v'⁆` |
-| alternation | `bracket_self` | `⁅u, u⁆ = 0` |
-| antisymmetry | `bracket_anticomm` | `⁅u, v⁆ = -⁅v, u⁆` |
-| scalar linearity, left | `bracket_smul_left` | `⁅t • u, v⁆ = t • ⁅u, v⁆` |
-| scalar linearity, right | `bracket_smul_right` | `⁅u, t • v⁆ = t • ⁅u, v⁆` |
-| Jacobi | `bracket_jacobi` | `⁅u, ⁅v, w⁆⁆ + ⁅v, ⁅w, u⁆⁆ + ⁅w, ⁅u, v⁆⁆ = 0` |
-| Jacobi, Leibniz form | `bracket_leibniz` | `⁅u, ⁅v, w⁆⁆ = ⁅⁅u, v⁆, w⁆ + ⁅v, ⁅u, w⁆⁆` |
+| additivity, left slot | `bracket_add_left` | $[u+u',v] = [u,v] + [u',v]$ |
+| additivity, right slot | `bracket_add_right` | $[u,v+v'] = [u,v] + [u,v']$ |
+| alternation | `bracket_self` | $[u,u] = 0$ |
+| antisymmetry | `bracket_anticomm` | $[u,v] = -[v,u]$ |
+| scalar linearity, left | `bracket_smul_left` | $[t\,u,v] = t\,[u,v]$ |
+| scalar linearity, right | `bracket_smul_right` | $[u,t\,v] = t\,[u,v]$ |
+| Jacobi | `bracket_jacobi` | $[u,[v,w]] + [v,[w,u]] + [w,[u,v]] = 0$ |
+| Jacobi, Leibniz form | `bracket_leibniz` | $[u,[v,w]] = [[u,v],w] + [v,[u,w]]$ |
 
 > [!NOTE]
 > **How Jacobi is proved.** Rewrite with `cross_coordinates` and check the
@@ -113,15 +114,15 @@ instance crossLieAlgebra : LieAlgebra ℝ Vec3 where
   lie_smul := fun t x y => Brane.GA.cross_smul_right x t y
 ```
 
-then make `Vec3` a genuine Lie algebra, with `⁅u, v⁆ = u × v`.
+then make `Vec3` a genuine Lie algebra, with $[u,v] = u \times v$.
 
 ---
 
 ## 3. The adjoint action
 
 > [!NOTE]
-> **Definition (adjoint action).** For fixed `u`, the map
-> `ad u : v ↦ ⁅u, v⁆` is linear:
+> **Definition (adjoint action).** For fixed $u$, the map
+> $\operatorname{ad}_u : v \mapsto [u,v]$ is linear:
 
 ```lean
 def crossAdjoint (u : Vec3) : Vec3 →ₗ[ℝ] Vec3 where
@@ -130,8 +131,8 @@ def crossAdjoint (u : Vec3) : Vec3 →ₗ[ℝ] Vec3 where
   map_smul' t v := Brane.GA.cross_smul_right u t v
 ```
 
-The Jacobi identity says exactly that `ad u` is a **derivation** of the
-bracket:
+The Jacobi identity says exactly that $\operatorname{ad}_u$ is a **derivation**
+of the bracket:
 
 ```lean
 theorem crossAdjoint_leibniz (u v w : Vec3) :
@@ -145,12 +146,12 @@ as the connection Leibniz rule `cov_leibniz` in `Brane.Connections`.
 
 ---
 
-## 4. The hat map and `so(3)`
+## 4. The hat map and $\mathfrak{so}(3)$
 
 > [!IMPORTANT]
-> **Definition (`so(3)`).** The Lie algebra `so(3)` consists of the
-> skew-symmetric `3 × 3` matrices. The **hat map** sends a vector to the
-> matrix of cross product by that vector:
+> **Definition ($\mathfrak{so}(3)$).** The Lie algebra $\mathfrak{so}(3)$
+> consists of the skew-symmetric $3 \times 3$ matrices. The **hat map** sends
+> a vector to the matrix of cross product by that vector:
 
 ```lean
 def hatMatrix (u : Vec3) : Matrix (Fin 3) (Fin 3) ℝ :=
@@ -159,10 +160,11 @@ def hatMatrix (u : Vec3) : Matrix (Fin 3) (Fin 3) ℝ :=
 
 Two facts connect it to the bracket:
 
-* `hatMatrix_mem_so` — `hatMatrix u` is skew-symmetric, so it lies in
+* `hatMatrix_mem_so` — $\widehat{u}$ is skew-symmetric, so it lies in
   `LieAlgebra.Orthogonal.so (Fin 3) ℝ`;
-* `hatMatrix_commutator` — `hatMatrix ⁅u, v⁆ = [hatMatrix u, hatMatrix v]`,
-  where the right-hand bracket is the matrix commutator `A * B - B * A`.
+* `hatMatrix_commutator` — $\widehat{[u,v]} = [\widehat{u},\widehat{v}]$,
+  where the right-hand bracket is the matrix commutator
+  $\widehat{u}\,\widehat{v} - \widehat{v}\,\widehat{u}$.
 
 ```lean
 theorem hatMatrix_mem_so (u : Vec3) :
@@ -179,8 +181,8 @@ theorem hatMatrix_commutator (u v : Vec3) :
     simp [hatMatrix, cross_coordinates, vec3] <;> ring
 ```
 
-The hat map is therefore a Lie-algebra homomorphism from `(Vec3, ×)` to
-`so(3)`. The full equivalence
+The hat map is therefore a Lie-algebra homomorphism from
+$(\mathrm{Vec3}, \times)$ to $\mathfrak{so}(3)$. The full equivalence
 
 ```lean
 noncomputable def so3MatrixEquiv :
@@ -189,15 +191,16 @@ noncomputable def so3MatrixEquiv :
 ```
 
 is stated and left as `sorry`; the missing work is the explicit inverse (read
-off the entries `u₀ = A₁₀`, `u₁ = A₀₂`, `u₂ = A₂₁` of a skew-symmetric matrix)
-and the bracket-preservation proof, which follows from
+off the entries $u_0 = A_{10}$, $u_1 = A_{02}$, $u_2 = A_{21}$ of a
+skew-symmetric matrix) and the bracket-preservation proof, which follows from
 `hatMatrix_commutator`.
 
 > [!TIP]
-> **Reading the inverse.** The matrix `hatMatrix u` stores the three
-> independent entries in the slots `A₁₀`, `A₀₂`, `A₂₁`. A skew-symmetric
-> matrix has exactly those three degrees of freedom, which is why the hat map
-> is an isomorphism onto `so(3)` rather than merely an injection.
+> **Reading the inverse.** The matrix $\widehat{u}$ stores the three
+> independent entries in the slots $A_{10}$, $A_{02}$, $A_{21}$. A
+> skew-symmetric matrix has exactly those three degrees of freedom, which is
+> why the hat map is an isomorphism onto $\mathfrak{so}(3)$ rather than merely
+> an injection.
 
 ---
 
@@ -207,7 +210,7 @@ The file also records the dictionary with Mathlib:
 
 | Object | Mathlib name | Lean restatement |
 | --- | --- | --- |
-| bracket on matrices | `⁅A, B⁆ = A * B - B * A` | `matrix_bracket_eq_commutator` |
+| bracket on matrices | $[A,B] = AB - BA$ | `matrix_bracket_eq_commutator` |
 | special linear Lie algebra | `LieAlgebra.SpecialLinear.sl` | `mem_sl_iff` |
 | orthogonal Lie algebra | `LieAlgebra.Orthogonal.so` | `mem_so_iff` |
 | derivations | `Derivation` | `derivation_leibniz` |
@@ -231,9 +234,10 @@ theorem derivation_leibniz {A : Type*} [CommRing A] [Algebra ℝ A]
   D.leibniz a b
 ```
 
-So `Vec3` with the cross product is the same Lie algebra as `so(3)`, and
-`sl(3)` / `so(3)` are available from Mathlib whenever a matrix model is more
-convenient than the coordinate model.
+So `Vec3` with the cross product is the same Lie algebra as
+$\mathfrak{so}(3)$, and $\mathfrak{sl}(3)$ / $\mathfrak{so}(3)$ are available
+from Mathlib whenever a matrix model is more convenient than the coordinate
+model.
 
 ---
 
@@ -251,11 +255,11 @@ convenient than the coordinate model.
 | Adjoint is a derivation | `crossAdjoint_leibniz` | proved |
 | Hat matrix is skew | `hatMatrix_mem_so` | proved |
 | Hat respects commutator | `hatMatrix_commutator` | proved |
-| `Vec3 ≃ so(3)` | `so3MatrixEquiv` | `sorry` |
+| $\mathrm{Vec3} \cong \mathfrak{so}(3)$ | `so3MatrixEquiv` | `sorry` |
 
-The single `sorry` is the explicit equivalence with Mathlib's bundled `so(3)`:
-the homomorphism half is already proved, and the inverse is the entry-reading
-map described in §4.
+The single `sorry` is the explicit equivalence with Mathlib's bundled
+$\mathfrak{so}(3)$: the homomorphism half is already proved, and the inverse
+is the entry-reading map described in §4.
 
 ---
 
@@ -267,12 +271,12 @@ map described in §4.
 | `bracket_jacobi` | the cross product satisfies Jacobi | coordinates + `ring` |
 | `crossLieRing` | `Vec3` is a Lie ring | the bracket laws |
 | `crossLieAlgebra` | `Vec3` is a real Lie algebra | `cross_smul_right` |
-| `crossAdjoint u` | the linear map `v ↦ ⁅u, v⁆` | `cross_add_right`, `cross_smul_right` |
-| `crossAdjoint_leibniz` | `ad u` is a derivation | `bracket_leibniz` |
-| `hatMatrix u` | the skew-symmetric matrix of `u` | matrix literal |
-| `hatMatrix_mem_so` | its image lies in `so(3)` | entry check |
-| `hatMatrix_commutator` | hat turns `×` into the matrix commutator | entry check |
-| `so3MatrixEquiv` | `Vec3 ≃ₗ⁅ℝ⁆ so(3)` | `sorry` |
+| `crossAdjoint u` | the linear map $v \mapsto [u,v]$ | `cross_add_right`, `cross_smul_right` |
+| `crossAdjoint_leibniz` | $\operatorname{ad}_u$ is a derivation | `bracket_leibniz` |
+| `hatMatrix u` | the skew-symmetric matrix of $u$ | matrix literal |
+| `hatMatrix_mem_so` | its image lies in $\mathfrak{so}(3)$ | entry check |
+| `hatMatrix_commutator` | hat turns $\times$ into the matrix commutator | entry check |
+| `so3MatrixEquiv` | $\mathrm{Vec3} \cong \mathfrak{so}(3)$ | `sorry` |
 
 ---
 

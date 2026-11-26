@@ -15,8 +15,8 @@ background you need is: partial derivatives, matrix multiplication, and the
 idea of a UV coordinate.
 
 > [!NOTE]
-> **The question.** Given a point `p` on a Riemannian manifold `M`, how do we
-> build a useful 2D parameterized chart around `p`?
+> **The question.** Given a point $p$ on a Riemannian manifold $M$, how do we
+> build a useful 2D parameterized chart around $p$?
 >
 > The answer should be geometric, not just coordinate bookkeeping. The chart
 > should say where a tangent direction goes, how distances and angles
@@ -31,7 +31,7 @@ derivative and [`lie-algebra.md`](lie-algebra.md) for the algebraic layer.
 ## 1. The surface is already a chart
 
 The project already treats a graph surface as a map from a 2D parameter plane
-into `ℝ³`:
+into $\mathbb{R}^3$:
 
 ```lean
 def graph (h : HeightFun) (p : Point2) : Point3 :=
@@ -39,45 +39,46 @@ def graph (h : HeightFun) (p : Point2) : Point3 :=
 ```
 
 That is a global chart in the usual graph-surface setting: the parameter
-domain is `Point2 = ℝ × ℝ`, and `h` lifts it to the manifold. In the notation
-of the shooting note,
+domain is `Point2` $= \mathbb{R} \times \mathbb{R}$, and $h$ lifts it to the
+manifold. In the notation of the shooting note,
 
-```text
-σ := graph h,   σ(x, y) = (x, y, h x y).
-```
+$$
+\sigma := \operatorname{graph} h, \qquad
+\sigma(x,y) = (x, y, h(x,y)).
+$$
 
 > [!IMPORTANT]
 > **The local, inverse-facing question.** The graph chart goes *parameter
 > plane → surface*. The interesting chart question goes the other way: given
-> `p ∈ M`, produce a flat domain `U ⊂ ℝ²` and a map `Φ : U → M` whose image
-> is a small patch around `p`. This is the chart a texture map, a local
-> simulation, or a numerical scheme would actually use.
+> $p \in M$, produce a flat domain $U \subset \mathbb{R}^2$ and a map
+> $\Phi : U \to M$ whose image is a small patch around $p$. This is the chart
+> a texture map, a local simulation, or a numerical scheme would actually use.
 
 ---
 
 ## 2. Texture mapping ↔ Riemannian charts
 
 In 2D texture mapping, a surface patch is parameterized by coordinates
-`(u, v)` in a flat domain. A texture lookup evaluates a function
+$(u,v)$ in a flat domain. A texture lookup evaluates a function
 
-```text
-T : U ⊂ ℝ² → Color
-```
+$$
+T : U \subset \mathbb{R}^2 \to \mathrm{Color}
+$$
 
 while the surface embedding evaluates
 
-```text
-φ : U ⊂ ℝ² → M ⊂ ℝ³.
-```
+$$
+\varphi : U \subset \mathbb{R}^2 \to M \subset \mathbb{R}^3.
+$$
 
 The useful graphics questions map directly to differential geometry:
 
 | Texture mapping | Riemannian chart |
 | --- | --- |
-| UV domain `U ⊂ ℝ²` | coordinate domain around `p` |
-| chart / parameterization `φ(u,v)` | local chart or normal chart |
-| tangent vectors `∂φ/∂u`, `∂φ/∂v` | coordinate basis of `T_pM` pushed along the chart |
-| Jacobian / first fundamental form | metric pullback `φ* g`, area and angle distortion |
+| UV domain $U \subset \mathbb{R}^2$ | coordinate domain around $p$ |
+| chart / parameterization $\varphi(u,v)$ | local chart or normal chart |
+| tangent vectors $\partial\varphi/\partial u$, $\partial\varphi/\partial v$ | coordinate basis of $T_pM$ pushed along the chart |
+| Jacobian / first fundamental form | metric pullback $\varphi^* g$, area and angle distortion |
 | texel footprint / anisotropy | eigenvalues of the metric in chart coordinates |
 | seam / singular parameterization | chart boundary, cut locus, or non-injective exponential map |
 
@@ -90,48 +91,49 @@ supplies the canonical construction around a point.
 ## 3. Normal coordinates via the exponential map
 
 > [!IMPORTANT]
-> **Definition (exponential map).** For a Riemannian manifold `(M, g)` and
-> point `p ∈ M`, the exponential map sends a tangent vector to the endpoint
+> **Definition (exponential map).** For a Riemannian manifold $(M,g)$ and
+> point $p \in M$, the exponential map sends a tangent vector to the endpoint
 > of a geodesic:
 >
-> ```text
-> exp_p : V ⊂ T_pM → M
-> exp_p(v) = γ_v(1),
-> ```
+> $$
+> \exp_p : V \subset T_pM \to M,
+> \qquad \exp_p(v) = \gamma_v(1),
+> $$
 >
-> where `γ_v` is the geodesic with `γ_v(0) = p` and `γ_v'(0) = v`.
+> where $\gamma_v$ is the geodesic with $\gamma_v(0) = p$ and
+> $\gamma_v'(0) = v$.
 
-If we choose an orthonormal basis `(e₁, e₂)` of `T_pM`, then every tangent
+If we choose an orthonormal basis $(e_1,e_2)$ of $T_pM$, then every tangent
 vector can be written as
 
-```text
-v = u e₁ + v' e₂,   (u, v') ∈ ℝ²,
-```
+$$
+v = u\,e_1 + v'\,e_2, \qquad (u,v') \in \mathbb{R}^2,
+$$
 
 and the normal chart is
 
-```text
-Φ_p(u, v') = exp_p(u e₁ + v' e₂).
-```
+$$
+\Phi_p(u,v') = \exp_p(u\,e_1 + v'\,e_2).
+$$
 
-This is a 2D parameterized mapping around `p`: the flat UV-like domain is a
-disk in `ℝ²`, and the image is a geodesic patch on the manifold.
+This is a 2D parameterized mapping around $p$: the flat UV-like domain is a
+disk in $\mathbb{R}^2$, and the image is a geodesic patch on the manifold.
 
 > [!NOTE]
 > **Properties of the normal chart.**
 >
-> * `Φ_p(0,0) = p`.
+> * $\Phi_p(0,0) = p$.
 > * Straight lines through the origin in parameter space map to geodesics
->   through `p`.
+>   through $p$.
 > * The metric at the origin is Euclidean in normal coordinates, so
->   first-order length and angle distortion vanishes at `p`.
+>   first-order length and angle distortion vanishes at $p$.
 > * The chart is generally valid only up to the injectivity radius / cut
->   locus; beyond that, `exp_p` can stop being a good parameterization, much
+>   locus; beyond that, $\exp_p$ can stop being a good parameterization, much
 >   like a UV map can fold or overlap.
 
 > [!WARNING]
 > **Where the chart stops being a chart.** Normal coordinates are only local.
-> Past the cut locus, `exp_p` can identify different tangent directions with
+> Past the cut locus, $\exp_p$ can identify different tangent directions with
 > the same surface point, exactly as a UV map can fold over itself. Any
 > computational chart needs a radius bound, or a test for injectivity.
 
@@ -141,20 +143,20 @@ disk in `ℝ²`, and the image is a geodesic patch on the manifold.
 
 Texture mapping cares about how much a flat texel is stretched on the surface.
 The same quantity is measured by the pullback metric. For a chart
-`Φ : U → M`, let
+$\Phi : U \to M$, let
 
-```text
-G_{ij}(u,v) = g(DΦ_u e_i, DΦ_u e_j).
-```
+$$
+G_{ij}(u,v) = g(D\Phi_u e_i,\, D\Phi_u e_j).
+$$
 
 Then:
 
-* `det(G)` controls local area scaling.
-* The singular values / eigenvalues of `G` control anisotropic stretch.
+* $\det(G)$ controls local area scaling.
+* The singular values / eigenvalues of $G$ control anisotropic stretch.
 * Conformal distortion measures angle error; isometric distortion measures
   length error.
-* In normal coordinates, `G_{ij}(0) = δ_{ij}` and the first derivatives of
-  the metric vanish at the origin; curvature appears in higher-order
+* In normal coordinates, $G_{ij}(0) = \delta_{ij}$ and the first derivatives
+  of the metric vanish at the origin; curvature appears in higher-order
   distortion.
 
 This gives a concrete bridge: a "good" local texture patch around a point is a
@@ -164,7 +166,8 @@ canonical curvature-aware starting point.
 ### The Lean distortion API
 
 A chart is represented as a map on graph parameter coordinates. Its Jacobian
-is a `2×2` matrix, and its pullback metric is `Jᵀ * G * J`:
+is a $2 \times 2$ matrix, and its pullback metric is
+$J^{\mathsf T} G\, J$:
 
 ```lean
 abbrev ParamChart : Type := Point2 → Point2
@@ -214,8 +217,8 @@ theorem isIsometricAt.isEqualAreaAt {h : HeightFun} {φ : ParamChart} {u : Point
 > **Reading the pullback.** `chartJacobian φ u` is the derivative of the
 > chart; `gramMatrix h (φ u)` is the surface metric at the chart's image
 > point; and `pullbackGram` is the metric a texture would actually feel. This
-> is exactly the `Jᵀ G J` of the shooting note, with `J` now the chart
-> Jacobian rather than the graph Jacobian.
+> is exactly the $J^{\mathsf T} G\,J$ of the shooting note, with $J$ now the
+> chart Jacobian rather than the graph Jacobian.
 
 ---
 
@@ -228,18 +231,18 @@ theorem isIsometricAt.isEqualAreaAt {h : HeightFun} {φ : ParamChart} {u : Point
 >
 > * **Point and tangent frame.** `Brane.DiffGeom` defines `graph`, `tangentX`,
 >   `tangentY`, `normal`, and `gramMatrix`. An orthonormal tangent basis at
->   `p` can be obtained from the tangent frame.
+>   $p$ can be obtained from the tangent frame.
 > * **Geodesics.** `Brane.Shooting` and `Brane.ParallelTransport` evolve
 >   geodesics in parameter space. The shooting method is the computational
->   form of `exp_p`: choose an initial velocity and integrate for unit time.
+>   form of $\exp_p$: choose an initial velocity and integrate for unit time.
 >   Eberly's *Riemannian Geodesics* notes derive the geodesic ODE from the
 >   metric/Christoffel symbols and treat geodesic tracing as numerical
 >   evolution of that ODE — the same bridge used by `expShoot`.
 > * **Parallel transport.** Transporting a tangent basis along geodesics gives
 >   a moving frame, related to Fermi/parallel normal coordinates.
 > * **Distortion.** `gramMatrix h` is already the first fundamental form in
->   the graph parameterization. For a normal chart `Φ_p`, the pullback metric
->   is sampled numerically by finite differences of `Φ_p` — in Lean,
+>   the graph parameterization. For a normal chart $\Phi_p$, the pullback
+>   metric is sampled numerically by finite differences of $\Phi_p$ — in Lean,
 >   `chartJacobian` uses `deriv` and `pullbackGram` composes it with
 >   `gramMatrix h`.
 
@@ -263,7 +266,7 @@ chart is a reparameterization layered on top.
 ### A computational exponential map
 
 On a graph surface, geodesics in parameter space are computed by the shooting
-method. Shooting for unit time from `(p, v)` is the computational exponential
+method. Shooting for unit time from $(p,v)$ is the computational exponential
 map in parameter coordinates:
 
 ```lean
@@ -303,10 +306,10 @@ def normalParamChart (h : HeightFun) (P : RadialProfile) (p : Point2)
 > not yet proved.
 
 > [!TIP]
-> **A prototype.** Pick `(x₀, y₀)`, build an orthonormal basis in
-> `T_p(graph h)`, shoot geodesics for a grid of tangent vectors
-> `(u, v') ∈ [-r, r]²`, and render the resulting patch. Coloring the patch by
-> `det(G)` or stretch eigenvalues visualizes chart distortion exactly like a
+> **A prototype.** Pick $(x_0,y_0)$, build an orthonormal basis in
+> $T_p(\operatorname{graph} h)$, shoot geodesics for a grid of tangent vectors
+> $(u,v') \in [-r,r]^2$, and render the resulting patch. Coloring the patch by
+> $\det(G)$ or stretch eigenvalues visualizes chart distortion exactly like a
 > texture-mapping debug view.
 
 ---
@@ -316,18 +319,22 @@ def normalParamChart (h : HeightFun) (P : RadialProfile) (p : Point2)
 [Map projections](https://en.wikipedia.org/wiki/List_of_map_projections) are
 conventions for mapping a curved surface to a flat parameter domain. Most are
 formulated for the sphere/Earth, but their distortion properties are exactly
-the properties we care about when choosing a local chart `Φ_p : U ⊂ ℝ² → M`
-around a point.
+the properties we care about when choosing a local chart
+$\Phi_p : U \subset \mathbb{R}^2 \to M$ around a point.
 
 The cartographic convention is usually "surface to plane"; the exponential-map
 view is often "plane/tangent to surface". For chart design it is useful to
 keep both directions in mind:
 
-```text
-parameter domain U ⊂ ℝ²  <->  local patch Φ_p(U) ⊂ M
-          coordinates                manifold point
-          texture UV                 surface location
-```
+$$
+\begin{array}{ccc}
+\text{parameter domain } U \subset \mathbb{R}^2
+  & \longleftrightarrow &
+  \text{local patch } \Phi_p(U) \subset M \\[2pt]
+\text{coordinates} && \text{manifold point} \\
+\text{texture UV} && \text{surface location}
+\end{array}
+$$
 
 ### Radial profiles
 
@@ -405,29 +412,31 @@ theorem azimuthalParamChart_zero (P : RadialProfile) (p : Point2) (e1 e2 : Vel2)
 
 The azimuthal family suggests making the chart choice explicit as
 
-```text
-Φ_p(r, θ) = E_p(ρ(r) e_θ),   or   Φ_p(u,v) = E_p(σ(u,v)),
-```
+$$
+\Phi_p(r,\theta) = E_p\bigl(\rho(r)\,e_\theta\bigr),
+\qquad\text{or}\qquad
+\Phi_p(u,v) = E_p\bigl(\sigma(u,v)\bigr),
+$$
 
-where `E_p` is the exponential/geodesic map, `e_θ` is a direction in `T_pM`,
-and `ρ`/`σ` selects the radial metric: identity for equidistant, tangent for
-gnomonic-like, sine/stereographic scalings for area/conformal variants on
-spheres. On a general Riemannian manifold, the same radial rescalings can be
-used as chart reparameterizations, but their global cartographic invariants
-may only hold approximately away from `p`.
+where $E_p$ is the exponential/geodesic map, $e_\theta$ is a direction in
+$T_pM$, and $\rho$/$\sigma$ selects the radial metric: identity for
+equidistant, tangent for gnomonic-like, sine/stereographic scalings for
+area/conformal variants on spheres. On a general Riemannian manifold, the same
+radial rescalings can be used as chart reparameterizations, but their global
+cartographic invariants may only hold approximately away from $p$.
 
 ### Azimuthal projections around a center
 
 Azimuthal projections are the closest cartographic analogue of a point-centered
-Riemannian chart. They place a chosen center `p` at the origin of the plane
-and assign directions around `p` to angles in the parameter domain.
+Riemannian chart. They place a chosen center $p$ at the origin of the plane
+and assign directions around $p$ to angles in the parameter domain.
 
-| Map projection | Preserved property | Riemannian / chart analogue | Notes for `Φ_p` |
+| Map projection | Preserved property | Riemannian / chart analogue | Notes for $\Phi_p$ |
 | --- | --- | --- | --- |
-| Azimuthal equidistant | distances from center along radials | geodesic polar / normal coordinates | `exp_p` preserves radial geodesic distance: `d(p, exp_p(v)) = ‖v‖` before cut locus. The natural "measure from p" chart. |
-| Gnomonic | geodesics as straight lines (sphere) | normal coordinates, radial geodesics | In normal coordinates, geodesics through `p` are straight parameter lines. On general manifolds this does not make all geodesics straight; constant curvature is special. |
-| Stereographic | angles / conformal | conformal normal coordinates / isothermal local chart | Preserves local shape but not area. Useful when texture/debugging should keep angles faithful near `p`. |
-| Lambert azimuthal equal-area | area | equal-area local parameterization | Preserves `det(G)` in the idealized target sense; useful when sampling density or physical area matters. |
+| Azimuthal equidistant | distances from center along radials | geodesic polar / normal coordinates | $\exp_p$ preserves radial geodesic distance: $d(p,\exp_p(v)) = \lVert v\rVert$ before cut locus. The natural "measure from $p$" chart. |
+| Gnomonic | geodesics as straight lines (sphere) | normal coordinates, radial geodesics | In normal coordinates, geodesics through $p$ are straight parameter lines. On general manifolds this does not make all geodesics straight; constant curvature is special. |
+| Stereographic | angles / conformal | conformal normal coordinates / isothermal local chart | Preserves local shape but not area. Useful when texture/debugging should keep angles faithful near $p$. |
+| Lambert azimuthal equal-area | area | equal-area local parameterization | Preserves $\det(G)$ in the idealized target sense; useful when sampling density or physical area matters. |
 | Orthographic | perspective view | tangent-plane projection / graph projection | Projects along a normal/eye direction. For an embedded surface this is close to "lift the tangent plane" or to the graph chart after local linearization. |
 | Vertical perspective | finite-distance perspective | camera/pin-hole projection of a patch | Relevant to rendering: a visible patch is parameterized by view rays, not intrinsic geodesic distance. |
 
@@ -455,9 +464,9 @@ selection criteria:
 
 | Property | Map-projection term | Chart metric condition | Use when |
 | --- | --- | --- | --- |
-| Conformal | conformal / orthomorphic | `G(u,v) = λ(u,v) I` | preserving angles, local shape, or grid orthogonality matters |
-| Equal-area | equal-area / authalic | `det(G(u,v)) = const` | sampling density, mass, or texture texel area should be uniform |
-| Equidistant | equidistant | distances preserved along selected lines | radial distance from `p`, or distances along a curve/grid family, matter |
+| Conformal | conformal / orthomorphic | $G(u,v) = \lambda(u,v)\,I$ | preserving angles, local shape, or grid orthogonality matters |
+| Equal-area | equal-area / authalic | $\det(G(u,v)) = \text{const}$ | sampling density, mass, or texture texel area should be uniform |
+| Equidistant | equidistant | distances preserved along selected lines | radial distance from $p$, or distances along a curve/grid family, matter |
 | Compromise | compromise | no single invariant; minimize combined distortion | visualization or texture mapping over a larger patch |
 
 No single chart on a curved manifold can be simultaneously isometric
@@ -487,10 +496,16 @@ several low-distortion charts rather than forcing one chart to cover a large
 region. This connects to texture atlases and to the cut locus/injectivity
 limit of normal coordinates.
 
-```text
-atlas = { (U_i, Φ_i) }  with small distortion per chart
-seams/cut boundaries    <-> chart transitions / overlap maps
-```
+$$
+\text{atlas} = \{(U_i, \Phi_i)\}
+\qquad\text{with small distortion per chart}
+$$
+
+$$
+\text{seams / cut boundaries}
+\;\longleftrightarrow\;
+\text{chart transitions / overlap maps}
+$$
 
 ---
 
@@ -499,18 +514,19 @@ seams/cut boundaries    <-> chart transitions / overlap maps
 The original plan, with the current status of each step:
 
 1. **Abstract exponential map interface.** State the minimal data needed:
-   tangent vectors, geodesic flow, and `exp_p(v) = γ_v(1)`.
+   tangent vectors, geodesic flow, and $\exp_p(v) = \gamma_v(1)$.
    *Status:* represented computationally by `expShoot`; the analytic interface
    is still open.
 2. **Graph-surface specialization.** Use the existing geodesic ODE/shooting
-   definitions to define a computational exponential map on `graph h`.
+   definitions to define a computational exponential map on $\operatorname{graph} h$.
    *Status:* `expShoot`.
-3. **Normal chart.** Package an orthonormal basis of `T_pM` and define
-   `Φ_p(u,v')`.
+3. **Normal chart.** Package an orthonormal basis of $T_pM$ and define
+   $\Phi_p(u,v')$.
    *Status:* `normalParamChart`, with `e1 e2` carrying the basis data.
-4. **Metric pullback.** Prove or numerically evaluate `G = DΦᵀ DΦ` / `φ* g`.
+4. **Metric pullback.** Prove or numerically evaluate
+   $G = D\Phi^{\mathsf T} D\Phi$ / $\varphi^* g$.
    *Status:* `chartJacobian`, `pullbackGram`, `areaScale`.
-5. **Distortion lemmas.** Show `G(0)=I` in normal coordinates and relate
+5. **Distortion lemmas.** Show $G(0) = I$ in normal coordinates and relate
    higher-order terms to curvature.
    *Status:* the isometric ⇒ conformal/equal-area implications are proved; the
    normal-coordinate expansion is open.
@@ -545,31 +561,31 @@ proved.
 | --- | --- | --- |
 | `ParamChart` | a chart in graph parameter coordinates | `Point2 → Point2` |
 | `SurfaceChart` | a chart into ambient space | `Point2 → Point3` |
-| `toSurface h φ` | compose a parameter chart with `graph h` | `σ ∘ φ` |
-| `chartJacobian φ u` | derivative of the chart | `Dφ` |
-| `pullbackGram h φ u` | texture-space metric | `(Dφ)ᵀ G (Dφ)` |
-| `areaScale h φ u` | local texel area | `det(pullbackGram)` |
-| `isConformalAt` | angles preserved | `G = λ I` |
-| `isEqualAreaAt` | area preserved | `det G = 1` |
-| `isIsometricAt` | lengths and angles preserved | `G = I` |
-| `RadialProfile` | radial reparameterization of an azimuthal chart | `ℝ → ℝ`, fixes `0` |
-| `azimuthalUV P u` | Cartesian UV → profiled radius + direction | `(ρ(r) cos θ, ρ(r) sin θ)` |
-| `azimuthalParamChart P p e1 e2` | centered chart in parameter coordinates | `p + a₁ e₁ + a₂ e₂` |
-| `expShoot h p v dt n` | computational `exp_p(v)` | RK4 geodesic shot |
-| `normalParamChart h P p e1 e2` | normal chart from a UV profile | `exp_p` on profiled UV |
+| `toSurface h φ` | compose a parameter chart with `graph h` | $\sigma \circ \varphi$ |
+| `chartJacobian φ u` | derivative of the chart | $D\varphi$ |
+| `pullbackGram h φ u` | texture-space metric | $(D\varphi)^{\mathsf T} G\,(D\varphi)$ |
+| `areaScale h φ u` | local texel area | $\det(\text{pullbackGram})$ |
+| `isConformalAt` | angles preserved | $G = \lambda I$ |
+| `isEqualAreaAt` | area preserved | $\det G = 1$ |
+| `isIsometricAt` | lengths and angles preserved | $G = I$ |
+| `RadialProfile` | radial reparameterization of an azimuthal chart | $\mathbb{R} \to \mathbb{R}$, fixes $0$ |
+| `azimuthalUV P u` | Cartesian UV → profiled radius + direction | $(\rho(r)\cos\theta,\ \rho(r)\sin\theta)$ |
+| `azimuthalParamChart P p e1 e2` | centered chart in parameter coordinates | $p + a_1 e_1 + a_2 e_2$ |
+| `expShoot h p v dt n` | computational $\exp_p(v)$ | RK4 geodesic shot |
+| `normalParamChart h P p e1 e2` | normal chart from a UV profile | $\exp_p$ on profiled UV |
 | `ProjectionFamily` | named chart choice + objective | `name`, `profile`, `objective` |
 
 ---
 
 ## 10. Open questions
 
-* Should the primary object be a chart into parameter space `(x,y)` or directly
-  into the embedded surface `graph h (x,y)`?
-* For graph surfaces, how does the graph chart `(x,y)` compare to the normal
-  chart around `p` as a texture parameterization?
-* What is the right Lean representation of `T_pM`: a subtype of `ℝ³` tangent to
-  the graph, or the parameter-plane velocity space pushed forward by
-  `d(graph h)`?
+* Should the primary object be a chart into parameter space $(x,y)$ or directly
+  into the embedded surface $\operatorname{graph} h\,(x,y)$?
+* For graph surfaces, how does the graph chart $(x,y)$ compare to the normal
+  chart around $p$ as a texture parameterization?
+* What is the right Lean representation of $T_pM$: a subtype of
+  $\mathbb{R}^3$ tangent to the graph, or the parameter-plane velocity space
+  pushed forward by $d(\operatorname{graph} h)$?
 * How should cut locus / injectivity radius be represented in a computational
   prototype?
 * Can the existing `ParallelTransport` code produce a stable frame for Fermi
@@ -578,7 +594,7 @@ proved.
   Riemannian manifolds, and which are only sphere/constant-curvature
   analogues?
 * Can we define a "projection family" API: a radial/profile function composed
-  with `exp_p`, with distortion measured by the pullback metric?
+  with $\exp_p$, with distortion measured by the pullback metric?
 
 ---
 

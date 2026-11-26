@@ -7,18 +7,19 @@ how the coordinate frame twists as you move. This note builds that correction
 from scratch for the graph surfaces of [`shooting-method.md`](shooting-method.md),
 then follows it through parallel transport, holonomy, and geodesics.
 
-Everything is concrete: the manifold is the parameter plane
-`Point2 = ℝ × ℝ`, a vector field is a function `Point2 → Vel2`, and the
-metric of a graph is the first fundamental form `gramMatrix h` from
-`Brane.DiffGeom`. The Lean modules are `lean/Brane/Connections.lean`
-(namespace `Brane.Conn`) and `lean/Brane/ParallelTransport.lean`
-(namespace `Brane.Trans`). No abstract manifold is needed, but every
-definition matches the standard one. The only background you need is:
-partial derivatives, matrix multiplication, and the chain rule.
+Everything is concrete: the manifold is the parameter plane `Point2` (that is,
+$\mathbb{R}^2$), a vector field is a function `Point2 → Vel2`, and the metric of
+a graph is the first fundamental form `gramMatrix h` from `Brane.DiffGeom`. The
+Lean modules are `lean/Brane/Connections.lean` (namespace `Brane.Conn`) and
+`lean/Brane/ParallelTransport.lean` (namespace `Brane.Trans`). No abstract
+manifold is needed, but every definition matches the standard one. The only
+background you need is: partial derivatives, matrix multiplication, and the
+chain rule.
 
 Where useful, we read the same objects in the vector/matrix language of
-[`shooting-method.md`](shooting-method.md): `J`, `G = JᵀJ`, `H`, `∇h`, and
-the geodesic acceleration `a = -G⁻¹ (vᵀHv) ∇h`.
+[`shooting-method.md`](shooting-method.md): $J$, $G = J^{\mathsf T}J$, $H$,
+$\nabla h$, and the geodesic acceleration
+$a = -G^{-1}(v^{\mathsf T}Hv)\,\nabla h$.
 
 > [!NOTE]
 > **The cast.** This note explains the four objects that the Lean modules
@@ -39,7 +40,8 @@ The companion note on Lie algebras is [`lie-algebra.md`](lie-algebra.md).
 
 > [!NOTE]
 > **Definition (vector field).** A **vector field** is a function that
-> assigns a velocity `Vel2 = Fin 2 → ℝ` to every parameter point:
+> assigns a velocity `Vel2` — a pair $(v_0,v_1) \in \mathbb{R}^2$ — to every
+> parameter point:
 
 ```lean
 abbrev ParamField : Type := Point2 → Vel2
@@ -47,8 +49,8 @@ abbrev ParamField : Type := Point2 → Vel2
 abbrev ScalarField : Type := HeightFun
 ```
 
-The **directional derivative** of a field `Y` at `p` along the velocity `v`
-is the Fréchet derivative applied to the direction `(v₀, v₁)`:
+The **directional derivative** of a field $Y$ at $p$ along the velocity $v$ is
+the Fréchet derivative applied to the direction $(v_0, v_1)$:
 
 ```lean
 def velToDir (v : Vel2) : Point2 := (v 0, v 1)
@@ -69,7 +71,7 @@ linearity lemmas used by the connection axioms are proved in full:
 | `dirDeriv_smul_direction` | linearity in the direction (scalar) |
 | `dirDeriv_add_Y` | linearity in the field (sum) |
 | `dirDeriv_smul_Y` | linearity in the field (scalar) |
-| `dirDeriv_smul_scalar` | product rule `d(fY) = (df)Y + f dY` |
+| `dirDeriv_smul_scalar` | product rule $d(fY) = (df)\,Y + f\,dY$ |
 
 The product rule is the one the connection axioms actually consume:
 
@@ -89,10 +91,10 @@ theorem dirDeriv_smul_scalar (f : ScalarField) (Y : ParamField) (p : Point2) (v 
 ## 2. Affine connection
 
 > [!IMPORTANT]
-> **Definition (affine connection).** An **affine connection** is a rule `∇`
-> that differentiates a vector field `Y` along another vector field `X`. It
-> is additive and `C∞`-linear in `X` and satisfies the Leibniz rule in `Y`.
-> In Lean this is the structure `Brane.Conn.AffineConnection`:
+> **Definition (affine connection).** An **affine connection** is a rule
+> $\nabla$ that differentiates a vector field $Y$ along another vector field
+> $X$. It is additive and $C^\infty$-linear in $X$ and satisfies the Leibniz
+> rule in $Y$. In Lean this is the structure `Brane.Conn.AffineConnection`:
 
 ```lean
 structure AffineConnection where
@@ -117,8 +119,9 @@ structure AffineConnection where
       fun p => dirDerivScalar f p (X p) • Y p + f p.1 p.2 • cov X Y p
 ```
 
-The two `C∞`-linearity laws are exactly the two Wikipedia axioms:
-`∇_{fX} Y = f ∇_X Y` and `∇_X (fY) = (∂_X f) Y + f ∇_X Y`.
+The two $C^\infty$-linearity laws are exactly the two Wikipedia axioms:
+$\nabla_{fX}Y = f\,\nabla_X Y$ and
+$\nabla_X(fY) = (\partial_X f)\,Y + f\,\nabla_X Y$.
 
 > [!NOTE]
 > **Example (flat connection).** The simplest connection is ordinary
@@ -157,13 +160,14 @@ Every proof is a direct rewrite with the corresponding linearity lemma of §1.
 
 > [!NOTE]
 > **Definition (Christoffel symbols).** A metric on the parameter plane is a
-> smoothly varying matrix `g : Point2 → Mat22`; for a graph it is
-> `gramMatrix h`. Write `∂_i g_{jl}` for the partial derivative of the
-> metric. The **Christoffel symbols of the second kind** are
+> smoothly varying matrix $g : \mathbb{R}^2 \to \mathrm{Mat}_{2\times2}$; for a
+> graph it is `gramMatrix h`. Write $\partial_i g_{jl}$ for the partial
+> derivative of the metric. The **Christoffel symbols of the second kind** are
 >
-> ```text
-> Γ^k_{ij} = ½ (g⁻¹)^{kl} (∂_i g_{jl} + ∂_j g_{il} - ∂_l g_{ij}),
-> ```
+> $$
+> \Gamma^k{}_{ij} = \tfrac12\,(g^{-1})^{kl}
+>   \bigl(\partial_i g_{jl} + \partial_j g_{il} - \partial_l g_{ij}\bigr),
+> $$
 >
 > which is `christoffel g p k i j` in Lean. They are symmetric in the lower
 > indices whenever the metric is symmetric (`christoffel_symm`).
@@ -183,7 +187,7 @@ noncomputable def christoffel (g : Point2 → Mat22) (p : Point2) (k : Fin 2) : 
 ```
 
 The symbols turn into a connection by adding the correction term
-`Γ^k_{ij} X^i Y^j` to the flat derivative:
+$\Gamma^k{}_{ij}X^iY^j$ to the flat derivative:
 
 ```lean
 def christoffelCorr (Γ : Point2 → Fin 2 → Mat22) (p : Point2) (X Y : Vel2) : Vel2 :=
@@ -196,8 +200,7 @@ def covOfChristoffel (Γ : Point2 → Fin 2 → Mat22) : AffineConnection where
 
 > [!IMPORTANT]
 > **Definition (Levi-Civita connection).** The **Levi-Civita connection** of
-> the graph of `h` is the connection whose symbols come from
-> `gramMatrix h`:
+> the graph of $h$ is the connection whose symbols come from `gramMatrix h`:
 
 ```lean
 def leviCivita (h : HeightFun) : AffineConnection :=
@@ -207,42 +210,45 @@ def leviCivita (h : HeightFun) : AffineConnection :=
 ### Matrix / vector form on a graph surface
 
 The shooting method in [`shooting-method.md`](shooting-method.md) works with
-the concrete matrix objects of the graph `σ(p) = (p.1, p.2, h p.1 p.2)`.
-The connection concepts above have direct matrix/vector readings in that
-language.
+the concrete matrix objects of the graph
+$\sigma(p) = (p_1, p_2, h(p_1,p_2))$. The connection concepts above have
+direct matrix/vector readings in that language.
 
 | Connection object | Matrix / vector reading | Lean name |
 | --- | --- | --- |
-| tangent basis | columns of the Jacobian `J = [[1,0],[0,1],[∂ₓh,∂ᵧh]]` | `DiffGeom.jacobian` |
-| metric `g` | Gram matrix `G = JᵀJ = I + ∇h ∇hᵀ` | `DiffGeom.gramMatrix` |
-| metric inverse `g⁻¹` | `G⁻¹ = (1/det G) [[g₂₂,-g₁₂],[-g₁₂,g₁₁]]`, `det G = 1+|∇h|²` | `DiffGeom.det_gramMatrix_eq` |
-| metric derivative `∂_i g_{jl}` | derivative of `G` entries, built from first/second partials of `h` | `Conn.metricPartial` |
-| Christoffel correction | `Γ(p; X, Y)^k = ∑_{i,j} Γ^k_{ij}(p) X^i Y^j`, a velocity in `Vel2` | `Conn.christoffelCorr` |
-| covariant derivative | `(∇_X Y)(p) = dY_p(X(p)) + Γ(p; X(p), Y(p))` | `covOfChristoffel` / `AffineConnection.cov` |
+| tangent basis | columns of the Jacobian $J = \begin{bmatrix}1&0\\0&1\\ \partial_x h & \partial_y h\end{bmatrix}$ | `DiffGeom.jacobian` |
+| metric $g$ | Gram matrix $G = J^{\mathsf T}J = I + \nabla h\,\nabla h^{\mathsf T}$ | `DiffGeom.gramMatrix` |
+| metric inverse $g^{-1}$ | $G^{-1} = \frac{1}{\det G}\begin{bmatrix}g_{22}&-g_{12}\\-g_{12}&g_{11}\end{bmatrix}$, with $\det G = 1+\lVert\nabla h\rVert^2$ | `DiffGeom.det_gramMatrix_eq` |
+| metric derivative $\partial_i g_{jl}$ | derivative of $G$ entries, built from first/second partials of $h$ | `Conn.metricPartial` |
+| Christoffel correction | $\Gamma(p;X,Y)^k = \sum_{i,j}\Gamma^k{}_{ij}(p)\,X^iY^j$, a velocity in `Vel2` | `Conn.christoffelCorr` |
+| covariant derivative | $(\nabla_X Y)(p) = dY_p(X(p)) + \Gamma(p;X(p),Y(p))$ | `covOfChristoffel` / `AffineConnection.cov` |
 
-The key vector identity is that the Christoffel correction is bilinear in
-the two velocity inputs: it behaves like a matrix-valued quadratic form
-`(X, Y) ↦ Γ(X,Y)` with output in `Vel2 = Fin 2 → ℝ`. In components this is
-exactly the ordinary matrix/vector contraction
+The key vector identity is that the Christoffel correction is bilinear in the
+two velocity inputs: it behaves like a matrix-valued quadratic form
+$(X,Y) \mapsto \Gamma(X,Y)$ with output in `Vel2` $= \mathbb{R}^2$. In
+components this is exactly the ordinary matrix/vector contraction
 
-```text
-Γ(p; X, Y) = ![ ∑ i j Γ⁰_{ij} X^i Y^j,  ∑ i j Γ¹_{ij} X^i Y^j ].
-```
+$$
+\Gamma(p;X,Y) = \left(\sum_{i,j}\Gamma^0{}_{ij}X^iY^j,\;
+                        \sum_{i,j}\Gamma^1{}_{ij}X^iY^j\right).
+$$
 
-For a graph surface, the metric is the familiar Gram matrix from the
-shooting method,
+For a graph surface, the metric is the familiar Gram matrix from the shooting
+method,
 
-```text
-G(p) = gramMatrix h p =
-  !![1 + (∂ₓh)²,    ∂ₓh ∂ᵧh;
-     ∂ₓh ∂ᵧh,    1 + (∂ᵧh)²],
-```
+$$
+G(p) = \operatorname{gramMatrix} h\,p =
+\begin{bmatrix}
+1 + (\partial_x h)^2 & \partial_x h\,\partial_y h\\[2pt]
+\partial_x h\,\partial_y h & 1 + (\partial_y h)^2
+\end{bmatrix},
+$$
 
-so the Levi-Civita connection of the graph is the flat directional
-derivative in parameter coordinates plus a correction computed from `G` and
-its first partial derivatives. The flat part is the "parameter-plane"
-calculus; the Christoffel correction is the curvature compensation required
-by the distorted map `G = JᵀJ`.
+so the Levi-Civita connection of the graph is the flat directional derivative
+in parameter coordinates plus a correction computed from $G$ and its first
+partial derivatives. The flat part is the "parameter-plane" calculus; the
+Christoffel correction is the curvature compensation required by the distorted
+map $G = J^{\mathsf T}J$.
 
 The two defining properties are stated as the `sorry`ed geometric bridges
 `leviCivita_torsion_free` and `leviCivita_metric_compatible`, and the
@@ -255,7 +261,7 @@ Riemannian geometry in this coordinate model.
 
 > [!NOTE]
 > **Definition (Lie bracket).** The **Lie bracket** of parameter fields is
-> `[X, Y] = dY(X) - dX(Y)`:
+> $[X,Y] = dY(X) - dX(Y)$:
 
 ```lean
 def lieBracketParam (X Y : ParamField) : ParamField :=
@@ -266,10 +272,13 @@ def lieBracketParam (X Y : ParamField) : ParamField :=
 > **Definition (torsion and curvature).** The **torsion** and **curvature**
 > of an affine connection are
 >
-> ```text
-> T(X,Y) = ∇_X Y - ∇_Y X - [X,Y],
-> R(X,Y)Z = ∇_X∇_Y Z - ∇_Y∇_X Z - ∇_{[X,Y]} Z,
-> ```
+> $$
+> T(X,Y) = \nabla_X Y - \nabla_Y X - [X,Y],
+> $$
+>
+> $$
+> R(X,Y)Z = \nabla_X\nabla_Y Z - \nabla_Y\nabla_X Z - \nabla_{[X,Y]}Z,
+> $$
 
 ```lean
 def torsion (D : AffineConnection) (X Y : ParamField) : ParamField :=
@@ -288,10 +297,10 @@ with `sorry`; they are the tensoriality statements from the Wikipedia page.
 ## 5. Parallel transport
 
 > [!NOTE]
-> **Setup (curve and field).** Fix a curve `γ : ℝ → Point2` and a field `V`
-> along it. In the vector/matrix language of the shooting method, `γ(t)` is a
-> parameter-plane position and `V(t)` is a `Vel2` — a two-component vector
-> `![V₀(t), V₁(t)]`.
+> **Setup (curve and field).** Fix a curve $\gamma : \mathbb{R} \to \mathbb{R}^2$
+> and a field $V$ along it. In the vector/matrix language of the shooting
+> method, $\gamma(t)$ is a parameter-plane position and $V(t)$ is a `Vel2` — a
+> two-component vector $(V_0(t), V_1(t))$.
 
 ```lean
 abbrev Curve : Type := ℝ → Point2
@@ -305,14 +314,16 @@ def curveAccel (γ : Curve) (t : ℝ) : Vel2 :=
 ```
 
 > [!IMPORTANT]
-> **Definition (covariant derivative along `γ`).** The **covariant
+> **Definition (covariant derivative along $\gamma$).** The **covariant
 > derivative** is the ordinary componentwise time derivative plus the
 > Christoffel correction:
 >
-> ```text
-> (DV/dt)^k = V̇^k + ∑_{i,j} Γ^k_{ij}(γ) γ̇^i V^j,
-> i.e.  DV/dt = V̇ + Γ(γ; γ̇, V).
-> ```
+> $$
+> \left(\frac{DV}{dt}\right)^k
+>   = \dot V^k + \sum_{i,j}\Gamma^k{}_{ij}(\gamma)\,\dot\gamma^i V^j,
+> \qquad\text{i.e.}\qquad
+> \frac{DV}{dt} = \dot V + \Gamma(\gamma;\dot\gamma,V).
+> $$
 
 ```lean
 def covAlongChristoffel (Γ : Point2 → Fin 2 → Mat22) (γ : Curve)
@@ -321,13 +332,13 @@ def covAlongChristoffel (Γ : Point2 → Fin 2 → Mat22) (γ : Curve)
     christoffelCorr Γ (γ t) (curveVelocity γ t) (V t) k
 ```
 
-This is exactly `covAlongChristoffel`: `V̇` is the vector derivative, and
-`christoffelCorr Γ (γ t) (curveVelocity γ t) (V t)` is the same
-matrix/vector contraction as in §3.
+This is exactly `covAlongChristoffel`: $\dot V$ is the vector derivative, and
+`christoffelCorr Γ (γ t) (curveVelocity γ t) (V t)` is the same matrix/vector
+contraction as in §3.
 
 > [!NOTE]
 > **Definition (parallel field).** The field is **parallel** when the
-> covariant derivative vanishes for every `t`:
+> covariant derivative vanishes for every $t$:
 
 ```lean
 def isParallel (Γ : Point2 → Fin 2 → Mat22) (γ : Curve)
@@ -337,10 +348,10 @@ def isParallel (Γ : Point2 → Fin 2 → Mat22) (γ : Curve)
 
 In matrix terms, parallel transport is the linear first-order ODE
 
-```text
-V̇(t) = - Γ(γ(t); γ̇(t), V(t)),
-V(t₀) = v₀.
-```
+$$
+\dot V(t) = -\Gamma(\gamma(t);\dot\gamma(t),V(t)),
+\qquad V(t_0) = v_0.
+$$
 
 Existence and uniqueness are the Picard–Lindelöf theorem; they are stated as
 `parallelTransport_exists` (a documented `sorry`) and the transport field is
@@ -357,8 +368,7 @@ noncomputable def parallelTransport (Γ : Point2 → Fin 2 → Mat22) (γ : Curv
   Classical.choose (parallelTransport_exists Γ γ t₀ v₀)
 ```
 
-The initial condition and the parallel equation are immediate from the
-choice:
+The initial condition and the parallel equation are immediate from the choice:
 
 ```lean
 theorem parallelTransport_isParallel (Γ : Point2 → Fin 2 → Mat22) (γ : Curve)
@@ -400,7 +410,7 @@ theorem transportMap_reverse (Γ : Point2 → Fin 2 → Mat22) (γ : Curve)
 > [!NOTE]
 > **Definition (holonomy).** **Holonomy** is what happens when you transport
 > a vector around a closed loop. The set of all such transport maps based at
-> `p` is `holonomyGroup Γ p`; that the identity belongs to it is
+> $p$ is `holonomyGroup Γ p`; that the identity belongs to it is
 > `id_mem_holonomyGroup`.
 
 ```lean
@@ -428,24 +438,26 @@ def isGeodesic (Γ : Point2 → Fin 2 → Mat22) (γ : Curve) : Prop :=
 
 Unfolding the definition gives the coordinate geodesic ODE
 
-```text
-γ̈^k + ∑_{i,j} Γ^k_{ij}(γ) γ̇^i γ̇^j = 0,
-i.e.  curveAccel γ t + Γ(γ t; γ̇(t), γ̇(t)) = 0.
-```
+$$
+\ddot\gamma^k + \sum_{i,j}\Gamma^k{}_{ij}(\gamma)\,\dot\gamma^i\dot\gamma^j = 0,
+\qquad\text{i.e.}\qquad
+\ddot\gamma(t) + \Gamma(\gamma(t);\dot\gamma(t),\dot\gamma(t)) = 0.
+$$
 
 On the graph surface, the Levi-Civita symbols are those of
-`G = gramMatrix h`. The shooting-method derivation solves the same equation
-in matrix form by projecting the lifted 3D acceleration onto the tangent
-plane:
+$G = \operatorname{gramMatrix} h$. The shooting-method derivation solves the
+same equation in matrix form by projecting the lifted 3D acceleration onto the
+tangent plane:
 
-```text
-G a + (vᵀ H v) ∇h = 0,
-a = -G⁻¹ (vᵀ H v) ∇h = geoAccel h p v,
-```
+$$
+G\,a + (v^{\mathsf T}Hv)\,\nabla h = 0,
+\qquad
+a = -G^{-1}(v^{\mathsf T}Hv)\,\nabla h = \texttt{geoAccel } h\,p\,v,
+$$
 
-where `G = JᵀJ`, `H` is the Hessian of `h`, `v = γ̇`, and
-`vᵀHv = hessQuad h p v` (`Shoot.hessQuad`). The bridge theorem states that
-these two geodesic descriptions are the same:
+where $G = J^{\mathsf T}J$, $H$ is the Hessian of $h$, $v = \dot\gamma$, and
+$v^{\mathsf T}Hv = \texttt{hessQuad } h\,p\,v$ (`Shoot.hessQuad`). The bridge
+theorem states that these two geodesic descriptions are the same:
 
 ```lean
 theorem isGeodesic_leviCivita_iff_Shoot (h : HeightFun) (γ : Curve) :
@@ -455,15 +467,15 @@ theorem isGeodesic_leviCivita_iff_Shoot (h : HeightFun) (γ : Curve) :
 ```
 
 This is the concrete link between the connection picture and the code that
-actually integrates trajectories: `Shoot.field` stores `(v, a)` with
-`a = geoAccel h p v`, so the RK4/Euler shooters are numerical integrators of
-the Levi-Civita geodesic ODE.
+actually integrates trajectories: `Shoot.field` stores $(v,a)$ with
+$a = \texttt{geoAccel } h\,p\,v$, so the RK4/Euler shooters are numerical
+integrators of the Levi-Civita geodesic ODE.
 
 | Shooting object | Connection reading |
 | --- | --- |
-| `gramMatrix h p` / `gramEntries` | metric `G = JᵀJ` whose Christoffel symbols define `leviCivita h` |
-| `hessQuad h p v` | directional curvature `vᵀHv`, the scalar in the normal projection |
-| `geoAccel h p v = -G⁻¹ (vᵀHv) ∇h` | Levi-Civita geodesic acceleration `-Γ(γ; γ̇, γ̇)` in matrix form |
+| `gramMatrix h p` / `gramEntries` | metric $G = J^{\mathsf T}J$ whose Christoffel symbols define `leviCivita h` |
+| `hessQuad h p v` | directional curvature $v^{\mathsf T}Hv$, the scalar in the normal projection |
+| `geoAccel h p v = -G⁻¹ (vᵀHv) ∇h` | Levi-Civita geodesic acceleration $-\Gamma(\gamma;\dot\gamma,\dot\gamma)$ in matrix form |
 | `field h s = ⟨v, geoAccel h p v⟩` | first-order form of the geodesic ODE |
 | `shoot step h s₀ dt n` | numerical parallel-velocity integration (Euler/RK4) |
 
@@ -477,8 +489,9 @@ of the velocity by the Levi-Civita connection of the surface.
 > [!NOTE]
 > **Definition (vector-bundle connection).** An affine connection is the
 > tangent-bundle case of a **connection on a vector bundle**. For the trivial
-> bundle `Point2 × F`, the structure `VectorBundleConnection F` has the same
-> two axioms, but the section takes values in an arbitrary normed space `F`:
+> bundle $\mathbb{R}^2 \times F$, the structure `VectorBundleConnection F` has
+> the same two axioms, but the section takes values in an arbitrary normed
+> space $F$:
 
 ```lean
 structure VectorBundleConnection (F : Type*) [NormedAddCommGroup F] [NormedSpace ℝ F] where
@@ -520,11 +533,13 @@ def vbcCurvature {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
 The standard induced connections are stated as existence theorems with
 `sorry`:
 
-* `dualConn_exists` — the dual connection on `F →L[ℝ] ℝ`, characterized by
-  `⟨∇*_X ξ, σ⟩ = X⟨ξ, σ⟩ - ⟨ξ, ∇_X σ⟩`;
-* `tensorConn_exists` — the tensor-product connection on `F × G`;
-* `endConn_exists` — the endomorphism connection on `F →L[ℝ] F`, with
-  `(∇_X u) σ = ∇_X (u σ) - u (∇_X σ)`.
+* `dualConn_exists` — the dual connection on $F \to_L \mathbb{R}$,
+  characterized by
+  $\langle \nabla^*_X \xi,\sigma\rangle
+   = X\langle \xi,\sigma\rangle - \langle \xi,\nabla_X\sigma\rangle$;
+* `tensorConn_exists` — the tensor-product connection on $F \times G$;
+* `endConn_exists` — the endomorphism connection on $F \to_L F$, with
+  $(\nabla_X u)\sigma = \nabla_X(u\sigma) - u(\nabla_X\sigma)$.
 
 These are exactly the constructions listed on the Wikipedia page
 *Connection (vector bundle)*, specialized to a trivial bundle over the
@@ -565,26 +580,26 @@ them is proved.
 | `Brane/Connections.lean` | Plain-language description | Matrix/vector reading |
 | --- | --- | --- |
 | `ParamField` | a velocity field on the parameter plane | `Point2 → Vel2` |
-| `dirDeriv Y p v` | ordinary directional derivative | `fderiv ℝ Y p (v₀, v₁)` |
-| `AffineConnection` | the two connection axioms | `∇_X Y` |
-| `flatConn` | the Euclidean connection | `dY(X)` |
-| `christoffel g` | the symbols of a metric | `½ g⁻¹ (∂g + ∂g - ∂g)` |
-| `christoffelCorr Γ p X Y` | the correction `Γ(X,Y)` | `∑ Γ^k_ij X^i Y^j` |
-| `covOfChristoffel Γ` | flat derivative plus correction | `dY(X) + Γ(X,Y)` |
+| `dirDeriv Y p v` | ordinary directional derivative | $dY_p(v)$ |
+| `AffineConnection` | the two connection axioms | $\nabla_X Y$ |
+| `flatConn` | the Euclidean connection | $dY(X)$ |
+| `christoffel g` | the symbols of a metric | $\tfrac12\,g^{-1}(\partial g + \partial g - \partial g)$ |
+| `christoffelCorr Γ p X Y` | the correction $\Gamma(X,Y)$ | $\sum_{i,j}\Gamma^k{}_{ij}X^iY^j$ |
+| `covOfChristoffel Γ` | flat derivative plus correction | $dY(X) + \Gamma(X,Y)$ |
 | `leviCivita h` | the graph's metric connection | symbols of `gramMatrix h` |
-| `torsion`, `curvature` | the two invariants | `∇_X Y - ∇_Y X - [X,Y]`, `R(X,Y)Z` |
+| `torsion`, `curvature` | the two invariants | $\nabla_X Y - \nabla_Y X - [X,Y]$, $R(X,Y)Z$ |
 
 | `Brane/ParallelTransport.lean` | Plain-language description | Matrix/vector reading |
 | --- | --- | --- |
 | `Curve` | a path in the parameter plane | `ℝ → Point2` |
 | `FieldAlong γ` | a vector field along the path | `ℝ → Vel2` |
-| `curveVelocity γ t` | the path's velocity | `(γ̇₀, γ̇₁)` |
-| `covAlongChristoffel Γ γ V t` | derivative of `V` along `γ` | `V̇ + Γ(γ̇,V)` |
-| `isParallel Γ γ V` | `DV/dt = 0` | the parallel ODE |
-| `parallelTransport Γ γ t₀ v₀` | the parallel field with `V(t₀)=v₀` | solution by `choose` |
-| `transportMap Γ γ s t` | transport from time `s` to time `t` | linear map on `Vel2` |
+| `curveVelocity γ t` | the path's velocity | $(\dot\gamma_0,\dot\gamma_1)$ |
+| `covAlongChristoffel Γ γ V t` | derivative of $V$ along $\gamma$ | $\dot V + \Gamma(\dot\gamma,V)$ |
+| `isParallel Γ γ V` | $DV/dt = 0$ | the parallel ODE |
+| `parallelTransport Γ γ t₀ v₀` | the parallel field with $V(t_0)=v_0$ | solution by `choose` |
+| `transportMap Γ γ s t` | transport from time $s$ to time $t$ | linear map on `Vel2` |
 | `holonomyGroup Γ p` | transport around closed loops | subset of `Vel2 → Vel2` |
-| `isGeodesic Γ γ` | velocity parallel along itself | `γ̈ + Γ(γ̇,γ̇) = 0` |
+| `isGeodesic Γ γ` | velocity parallel along itself | $\ddot\gamma + \Gamma(\dot\gamma,\dot\gamma) = 0$ |
 
 ---
 
