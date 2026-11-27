@@ -24,7 +24,9 @@ idea of a UV coordinate.
 > surface.
 
 The companions are [`connections.md`](connections.md) for the covariant
-derivative and [`lie-algebra.md`](lie-algebra.md) for the algebraic layer.
+derivative and [`lie-algebra.md`](lie-algebra.md) for the algebraic layer. The
+categorical reading of charts as a category is in
+[`category-theory.md`](category-theory.md).
 
 ---
 

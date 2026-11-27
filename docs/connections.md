@@ -32,7 +32,9 @@ $a = -G^{-1}(v^{\mathsf T}Hv)\thinspace \nabla h$.
 > 4. a **connection on a vector bundle**, together with the dual, tensor, and
 >    endomorphism connections it induces.
 
-The companion note on Lie algebras is [`lie-algebra.md`](lie-algebra.md).
+The companion note on Lie algebras is [`lie-algebra.md`](lie-algebra.md). The
+categorical reading of transport as a functor is in
+[`category-theory.md`](category-theory.md).
 
 ---
 

@@ -1,6 +1,8 @@
 # Lie Algebras and $\mathfrak{so}(3)$
 
 This note is the algebraic companion to [`connections.md`](connections.md). The
+categorical reading of the Lie-algebra adjunction is in
+[`category-theory.md`](category-theory.md). The
 bracket of vector fields and the torsion of a connection are Lie-algebraic
 objects, and the cross product on $\mathbb{R}^3$ is the smallest interesting
 example. Everything below cites the actual declarations in

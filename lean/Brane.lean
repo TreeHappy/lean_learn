@@ -11,4 +11,5 @@ import Brane.Connections
 import Brane.ParallelTransport
 import Brane.LieAlgebra
 import Brane.ChartMap
+import Brane.CategoryTheory
 import Brane.Exercises
