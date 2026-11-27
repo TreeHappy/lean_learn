@@ -155,6 +155,31 @@ theorem crossAdjoint_leibniz (u v w : Vec3) :
     crossAdjoint u ⁅v, w⁆ = ⁅crossAdjoint u v, w⁆ + ⁅v, crossAdjoint u w⁆ :=
   bracket_leibniz u v w
 
+/-- The adjoint action is a **Lie-algebra homomorphism**:
+`ad [u, v] = [ad u, ad v]`, where the bracket on the right is the
+commutator of linear endomorphisms. This is the Jacobi identity in
+disguise. -/
+theorem crossAdjoint_lie (u v : Vec3) :
+    crossAdjoint ⁅u, v⁆ =
+      crossAdjoint u * crossAdjoint v - crossAdjoint v * crossAdjoint u := by
+  apply LinearMap.ext
+  intro w
+  change ⁅⁅u, v⁆, w⁆ = ⁅u, ⁅v, w⁆⁆ - ⁅v, ⁅u, w⁆⁆
+  rw [bracket_leibniz]
+  abel
+
+/-- The Clifford commutator recovers the cross product:
+`[embed u, embed v] = 2 (u × v) I`, where `I` is the pseudoscalar.
+Since `I` is invertible, the commutator in `Cl(ℝ³)` and the Lie bracket
+on `Vec3` carry the same information. -/
+theorem embed_commutator (u v : Vec3) :
+    Brane.GA.embed u * Brane.GA.embed v -
+        Brane.GA.embed v * Brane.GA.embed u =
+      2 * Brane.GA.embed (cross u v) * Brane.GA.I := by
+  rw [Brane.GA.embed_mul_dual u v, Brane.GA.embed_mul_dual v u,
+    cross_swap, Brane.GA.embed_neg, real_inner_comm v u]
+  noncomm_ring
+
 /-! ## The hat map and `so(3)`
 
 The hat map sends `u = (u₀, u₁, u₂)` to the skew-symmetric matrix
@@ -168,6 +193,15 @@ algebras. -/
 /-- The **hat map**: the skew-symmetric matrix of the cross product by `u`. -/
 def hatMatrix (u : Vec3) : Matrix (Fin 3) (Fin 3) ℝ :=
   !![0, -u 2, u 1; u 2, 0, -u 0; -u 1, u 0, 0]
+
+/-- The hat matrix represents the cross product: `hat u *ᵥ v = u × v`. -/
+theorem hatMatrix_mulVec (u v : Vec3) :
+    hatMatrix u *ᵥ v = cross u v := by
+  ext i
+  fin_cases i <;>
+    simp [hatMatrix, cross_coordinates, vec3, Matrix.mulVec, dotProduct,
+      Fin.sum_univ_three] <;>
+    ring
 
 /-- The hat matrix is skew-symmetric, i.e. it lies in `so(3)`. -/
 theorem hatMatrix_mem_so (u : Vec3) :
